@@ -843,7 +843,7 @@ export default function ChatPage() {
                           </div>
                         ) : (
                           <>
-                            <MessageSquare className="h-4 w-4 flex-shrink-0" />
+                            <MessageSquare className="h-4 w-4 shrink-0" />
                             <p className="flex-1 truncate text-sm">
                               {session.title || 'New Chat'}
                             </p>
@@ -959,7 +959,7 @@ export default function ChatPage() {
                   style={{ animationDelay: `${index * 30}ms` }}
                 >
                   {message.role === 'assistant' && (
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#2a3942]">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2a3942]">
                       <Bot className="h-4 w-4 text-gray-300" />
                     </div>
                   )}
@@ -970,7 +970,7 @@ export default function ChatPage() {
                         : 'bg-[#202c33] text-gray-100'
                     }`}
                   >
-                    <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+                    <p className="whitespace-pre-wrap wrap-break-word text-sm leading-relaxed">
                       {message.content}
                     </p>
                     <div className="mt-1 flex items-center justify-between gap-2">
@@ -998,7 +998,7 @@ export default function ChatPage() {
                     </div>
                   </div>
                   {message.role === 'user' && (
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#2a3942]">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2a3942]">
                       <User className="h-4 w-4 text-gray-300" />
                     </div>
                   )}
@@ -1008,7 +1008,7 @@ export default function ChatPage() {
 
             {sending && (
               <div className="flex animate-in fade-in gap-3">
-                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#2a3942]">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2a3942]">
                   <Bot className="h-4 w-4 text-gray-300" />
                 </div>
                 <div className="rounded-lg bg-[#202c33] px-4 py-3">
