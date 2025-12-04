@@ -201,3 +201,107 @@ export async function getWorkspace(
   )
 }
 
+/**
+ * Create a new workspace
+ */
+export async function createWorkspace(name: string): Promise<Workspace> {
+  if (!ANYTHINGLLM_API_KEY) {
+    throw new Error('ANYTHINGLLM_API_KEY is not configured')
+  }
+
+  try {
+    const url = `${ANYTHINGLLM_BASE_URL}/workspace/new`
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${ANYTHINGLLM_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Failed to create workspace: ${response.status} ${errorText}`)
+    }
+
+    const data = await response.json()
+    return data.workspace
+  } catch (error) {
+    console.error('Error creating workspace:', error)
+    throw error
+  }
+}
+
+/**
+ * Upload a document to AnythingLLM
+ */
+export async function uploadDocument(formData: FormData): Promise<{ success: boolean, documents: any[] }> {
+  if (!ANYTHINGLLM_API_KEY) {
+    throw new Error('ANYTHINGLLM_API_KEY is not configured')
+  }
+
+  try {
+    const url = `${ANYTHINGLLM_BASE_URL}/document/upload`
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${ANYTHINGLLM_API_KEY}`,
+      },
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Failed to upload document: ${response.status} ${errorText}`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.error('Error uploading document:', error)
+    throw error
+  }
+}
+
+/**
+ * Update workspace embeddings (add/remove documents)
+ */
+export async function updateWorkspaceEmbeddings(
+  slug: string, 
+  adds: string[] = [], 
+  deletes: string[] = []
+): Promise<boolean> {
+  if (!ANYTHINGLLM_API_KEY) {
+    throw new Error('ANYTHINGLLM_API_KEY is not configured')
+  }
+
+  try {
+    const url = `${ANYTHINGLLM_BASE_URL}/workspace/${slug}/update-embeddings`
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${ANYTHINGLLM_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        adds,
+        deletes,
+      }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Failed to update embeddings: ${response.status} ${errorText}`)
+    }
+
+    return true
+  } catch (error) {
+    console.error('Error updating embeddings:', error)
+    throw error
+  }
+}
+
