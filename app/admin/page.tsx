@@ -12,7 +12,8 @@ import {
   Shield,
   CheckCircle,
   AlertCircle,
-  BookOpen
+  BookOpen,
+  File
 } from 'lucide-react'
 import { parseWorkspaceName } from '@/app/lib/subject-utils'
 
@@ -22,11 +23,21 @@ interface Workspace {
   slug: string
 }
 
+interface Document {
+  id: number
+  docId: string
+  filename: string
+  createdAt: string
+  metadata: string
+}
+
 export default function AdminPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
   const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(null)
+  const [documents, setDocuments] = useState<Document[]>([])
+  const [loadingDocs, setLoadingDocs] = useState(false)
   
   // Form states
   const [newSubjectName, setNewSubjectName] = useState('')
@@ -53,6 +64,29 @@ export default function AdminPage() {
     checkUser()
   }, [router])
 
+  useEffect(() => {
+    if (selectedWorkspace) {
+      fetchDocuments(selectedWorkspace.slug)
+    } else {
+      setDocuments([])
+    }
+  }, [selectedWorkspace])
+
+  const fetchDocuments = async (slug: string) => {
+    setLoadingDocs(true)
+    try {
+      const res = await fetch(`/api/admin/workspaces/${slug}/documents`)
+      const data = await res.json()
+      if (data.documents) {
+        setDocuments(data.documents)
+      }
+    } catch (error) {
+      console.error('Failed to fetch documents', error)
+    } finally {
+      setLoadingDocs(false)
+    }
+  }
+
   const fetchWorkspaces = async () => {
     try {
       const res = await fetch('/api/admin/workspaces')
@@ -71,8 +105,8 @@ export default function AdminPage() {
 
     setIsCreating(true)
     try {
-      // Format: alphachat_subjectname
-      const formattedName = `alphachat_${newSubjectName.toLowerCase().replace(/\s+/g, '_')}`
+      // Format: lumo_subjectname
+      const formattedName = `lumo_${newSubjectName.toLowerCase().replace(/\s+/g, '_')}`
       
       const res = await fetch('/api/admin/workspaces', {
         method: 'POST',
@@ -145,8 +179,16 @@ export default function AdminPage() {
 
       if (failCount === 0) {
         setUploadStatus({ type: 'success', message: `Successfully uploaded ${successCount} document(s)!` })
+        // Refresh documents list
+        if (selectedWorkspace) {
+          fetchDocuments(selectedWorkspace.slug)
+        }
       } else if (successCount > 0) {
         setUploadStatus({ type: 'error', message: `Uploaded ${successCount} files, but ${failCount} failed.` })
+        // Refresh documents list for the successful ones
+        if (selectedWorkspace) {
+          fetchDocuments(selectedWorkspace.slug)
+        }
       } else {
         setUploadStatus({ type: 'error', message: 'Failed to upload files.' })
       }
@@ -163,23 +205,23 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-transparent">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
+    <div className="min-h-screen bg-transparent">
+      <header className="bg-zinc-900/80 backdrop-blur-sm border-b border-zinc-800 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Shield className="h-6 w-6 text-indigo-600" />
-            <h1 className="text-xl font-bold text-gray-900">Admin Dashboard</h1>
+            <Shield className="h-6 w-6 text-indigo-500" />
+            <h1 className="text-xl font-bold text-zinc-100">Admin Dashboard</h1>
           </div>
           <button 
             onClick={() => router.push('/dashboard')}
-            className="text-sm text-gray-500 hover:text-gray-900"
+            className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors"
           >
             Back to App
           </button>
@@ -191,51 +233,51 @@ export default function AdminPage() {
           
           {/* Left Column: Subject List */}
           <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Create New Subject</h2>
+            <div className="bg-zinc-900/80 backdrop-blur-sm border border-zinc-800 rounded-lg p-6">
+              <h2 className="text-lg font-medium text-zinc-100 mb-4">Create New Subject</h2>
               <form onSubmit={handleCreateSubject} className="space-y-4">
                 <div>
-                  <label htmlFor="subjectName" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="subjectName" className="block text-sm font-medium text-zinc-300">
                     Subject Name
                   </label>
                   <div className="mt-1 flex rounded-md shadow-sm">
-                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">
-                      alphachat_
+                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-zinc-700 bg-zinc-800 text-zinc-400 sm:text-sm">
+                      lumo_
                     </span>
                     <input
                       type="text"
                       id="subjectName"
                       value={newSubjectName}
                       onChange={(e) => setNewSubjectName(e.target.value)}
-                      className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md border border-zinc-700 bg-zinc-900 text-zinc-100 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm placeholder-zinc-600"
                       placeholder="physics"
                     />
                   </div>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Will be created as: alphachat_{newSubjectName.toLowerCase().replace(/\s+/g, '_')}
+                  <p className="mt-1 text-xs text-zinc-500">
+                    Will be created as: lumo_{newSubjectName.toLowerCase().replace(/\s+/g, '_')}
                   </p>
                 </div>
                 <button
                   type="submit"
                   disabled={isCreating || !newSubjectName}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-colors"
                 >
                   {isCreating ? 'Creating...' : 'Create Subject'}
                 </button>
               </form>
             </div>
 
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900">Existing Subjects</h2>
+            <div className="bg-zinc-900/80 backdrop-blur-sm border border-zinc-800 rounded-lg overflow-hidden">
+              <div className="px-6 py-4 border-b border-zinc-800">
+                <h2 className="text-lg font-medium text-zinc-100">Existing Subjects</h2>
               </div>
-              <ul className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
+              <ul className="divide-y divide-zinc-800 max-h-[600px] overflow-y-auto">
                 {workspaces.map((ws) => {
                   const parsed = parseWorkspaceName(ws.name)
                   const displayName = parsed ? parsed.name : ws.name
-                  const isAlphaChat = ws.name.startsWith('alphachat_')
+                  const isAppWorkspace = ws.name.startsWith('alphachat_') || ws.name.startsWith('lumo_')
                   
-                  if (!isAlphaChat) return null // Only show alphachat workspaces
+                  if (!isAppWorkspace) return null // Only show app workspaces
 
                   return (
                     <li 
@@ -244,19 +286,19 @@ export default function AdminPage() {
                         setSelectedWorkspace(ws)
                         setUploadStatus(null)
                       }}
-                      className={`px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-                        selectedWorkspace?.id === ws.id ? 'bg-indigo-50 border-l-4 border-indigo-600' : ''
+                      className={`px-6 py-4 hover:bg-zinc-800/50 cursor-pointer transition-colors ${
+                        selectedWorkspace?.id === ws.id ? 'bg-indigo-900/20 border-l-4 border-indigo-500' : 'border-l-4 border-transparent'
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-900">{displayName}</span>
-                        <span className="text-xs text-gray-500 font-mono">{ws.slug}</span>
+                        <span className="text-sm font-medium text-zinc-200">{displayName}</span>
+                        <span className="text-xs text-zinc-500 font-mono">{ws.slug}</span>
                       </div>
                     </li>
                   )
                 })}
-                {workspaces.filter(ws => ws.name.startsWith('alphachat_')).length === 0 && (
-                  <li className="px-6 py-4 text-sm text-gray-500 text-center">
+                {workspaces.filter(ws => ws.name.startsWith('alphachat_') || ws.name.startsWith('lumo_')).length === 0 && (
+                  <li className="px-6 py-4 text-sm text-zinc-500 text-center">
                     No subjects found.
                   </li>
                 )}
@@ -267,14 +309,14 @@ export default function AdminPage() {
           {/* Right Column: Workspace Details & Upload */}
           <div className="lg:col-span-2">
             {selectedWorkspace ? (
-              <div className="bg-white rounded-lg shadow">
-                <div className="px-6 py-5 border-b border-gray-200 flex justify-between items-center">
+              <div className="bg-zinc-900/80 backdrop-blur-sm border border-zinc-800 rounded-lg">
+                <div className="px-6 py-5 border-b border-zinc-800 flex justify-between items-center">
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900">
+                    <h2 className="text-xl font-bold text-zinc-100">
                       {parseWorkspaceName(selectedWorkspace.name)?.name || selectedWorkspace.name}
                     </h2>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Workspace Slug: <span className="font-mono">{selectedWorkspace.slug}</span>
+                    <p className="mt-1 text-sm text-zinc-400">
+                      Workspace Slug: <span className="font-mono text-indigo-400">{selectedWorkspace.slug}</span>
                     </p>
                   </div>
                   <div className="flex space-x-2">
@@ -284,16 +326,16 @@ export default function AdminPage() {
 
                 <div className="p-6 space-y-8">
                   {/* Upload Section */}
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-indigo-500 transition-colors">
-                    <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">Upload Documents</h3>
-                    <p className="mt-1 text-sm text-gray-500">
+                  <div className="border-2 border-dashed border-zinc-700 rounded-lg p-8 text-center hover:border-indigo-500 transition-colors bg-zinc-900/50">
+                    <Upload className="mx-auto h-12 w-12 text-zinc-500" />
+                    <h3 className="mt-2 text-sm font-medium text-zinc-200">Upload Documents</h3>
+                    <p className="mt-1 text-sm text-zinc-400">
                       Upload PDF, TXT, DOCX files to train this subject.
                     </p>
                     <div className="mt-6">
                       <label
                         htmlFor="file-upload"
-                        className={`cursor-pointer inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
+                        className={`cursor-pointer inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors ${
                           uploading ? 'opacity-50 cursor-not-allowed' : ''
                         }`}
                       >
@@ -325,7 +367,7 @@ export default function AdminPage() {
                   {/* Status Messages */}
                   {uploadStatus && (
                     <div className={`rounded-md p-4 ${
-                      uploadStatus.type === 'success' ? 'bg-green-50' : 'bg-red-50'
+                      uploadStatus.type === 'success' ? 'bg-green-900/20 border border-green-900' : 'bg-red-900/20 border border-red-900'
                     }`}>
                       <div className="flex">
                         <div className="flex-shrink-0">
@@ -337,7 +379,7 @@ export default function AdminPage() {
                         </div>
                         <div className="ml-3">
                           <p className={`text-sm font-medium ${
-                            uploadStatus.type === 'success' ? 'text-green-800' : 'text-red-800'
+                            uploadStatus.type === 'success' ? 'text-green-200' : 'text-red-200'
                           }`}>
                             {uploadStatus.message}
                           </p>
@@ -346,15 +388,56 @@ export default function AdminPage() {
                     </div>
                   )}
 
+                  {/* Document List */}
+                  <div>
+                    <h3 className="text-lg font-medium text-zinc-100 mb-4">Uploaded Documents</h3>
+                    {loadingDocs ? (
+                      <div className="flex justify-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-500"></div>
+                      </div>
+                    ) : documents.length === 0 ? (
+                      <p className="text-sm text-zinc-500 italic">No documents uploaded yet.</p>
+                    ) : (
+                      <div className="bg-zinc-900/50 rounded-lg border border-zinc-800 overflow-hidden">
+                        <ul className="divide-y divide-zinc-800">
+                          {documents.map((doc) => {
+                            let displayName = doc.filename;
+                            try {
+                              const meta = JSON.parse(doc.metadata);
+                              if (meta.title) displayName = meta.title;
+                            } catch (e) {
+                              // ignore
+                            }
+                            
+                            return (
+                            <li key={doc.id} className="px-4 py-3 flex items-center justify-between hover:bg-zinc-800/30 transition-colors">
+                              <div className="flex items-center gap-3 overflow-hidden">
+                                <File className="h-5 w-5 text-indigo-400 flex-shrink-0" />
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium text-zinc-200 truncate" title={displayName}>
+                                    {displayName}
+                                  </p>
+                                  <p className="text-xs text-zinc-500">
+                                    Uploaded: {new Date(doc.createdAt).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              </div>
+                            </li>
+                          )})}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Instructions */}
-                  <div className="bg-blue-50 rounded-md p-4">
+                  <div className="bg-blue-900/20 border border-blue-900 rounded-md p-4">
                     <div className="flex">
                       <div className="flex-shrink-0">
                         <BookOpen className="h-5 w-5 text-blue-400" />
                       </div>
                       <div className="ml-3">
-                        <h3 className="text-sm font-medium text-blue-800">How it works</h3>
-                        <div className="mt-2 text-sm text-blue-700">
+                        <h3 className="text-sm font-medium text-blue-200">How it works</h3>
+                        <div className="mt-2 text-sm text-blue-300">
                           <ul className="list-disc pl-5 space-y-1">
                             <li>Uploading a document adds it to the AnythingLLM vector database.</li>
                             <li>The document is automatically linked (embedded) to this workspace.</li>
@@ -367,10 +450,10 @@ export default function AdminPage() {
                 </div>
               </div>
             ) : (
-              <div className="bg-white rounded-lg shadow p-12 text-center">
-                <BookOpen className="mx-auto h-12 w-12 text-gray-300" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No Subject Selected</h3>
-                <p className="mt-1 text-sm text-gray-500">
+              <div className="bg-zinc-900/80 backdrop-blur-sm border border-zinc-800 rounded-lg shadow p-12 text-center">
+                <BookOpen className="mx-auto h-12 w-12 text-zinc-600" />
+                <h3 className="mt-2 text-sm font-medium text-zinc-200">No Subject Selected</h3>
+                <p className="mt-1 text-sm text-zinc-400">
                   Select a subject from the list to manage its documents.
                 </p>
               </div>

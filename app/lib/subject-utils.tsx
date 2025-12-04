@@ -13,25 +13,24 @@ import {
 
 /**
  * Parse workspace name to extract subject information
- * Format: alphachat_<subject> or alphachat_<subject>_<suffix> or alphachat_<subject>-<suffix>
- * Examples:
- * - alphachat_physics -> { id: 'alphachat_physics', name: 'Physics', baseSubject: 'physics' }
- * - alphachat_physics_o -> { id: 'alphachat_physics_o', name: 'Physics O Level', baseSubject: 'physics' }
- * - alphachat_physics-o -> { id: 'alphachat_physics-o', name: 'Physics O Level', baseSubject: 'physics' }
- * - alphachat_physics-a -> { id: 'alphachat_physics-a', name: 'Physics A Level', baseSubject: 'physics' }
- * - alphachat_physics_a -> { id: 'alphachat_physics_a', name: 'Physics A Level', baseSubject: 'physics' }
+ * Format: alphachat_<subject> or lumo_<subject>
  */
 export function parseWorkspaceName(workspaceName: string): {
   id: string
   name: string
   baseSubject: string
 } | null {
-  if (!workspaceName.startsWith('alphachat_')) {
+  let prefix = ''
+  if (workspaceName.startsWith('alphachat_')) {
+    prefix = 'alphachat_'
+  } else if (workspaceName.startsWith('lumo_')) {
+    prefix = 'lumo_'
+  } else {
     return null
   }
 
-  // Remove 'alphachat_' prefix
-  const rest = workspaceName.substring('alphachat_'.length)
+  // Remove prefix
+  const rest = workspaceName.substring(prefix.length)
   if (!rest) return null
 
   // Handle both underscore and hyphen separators

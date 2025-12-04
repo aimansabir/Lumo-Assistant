@@ -680,42 +680,42 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex h-screen bg-[#0b141a] text-white">
+    <div className="flex h-screen bg-transparent text-zinc-100">
       {/* Sidebar */}
       <div
         className={`${
           sidebarOpen ? 'w-80' : 'w-0'
-        } flex flex-col border-r border-[#202c33] bg-[#111b21] transition-all duration-300 ease-in-out`}
+        } flex flex-col border-r border-zinc-800 bg-zinc-900/80 backdrop-blur-sm transition-all duration-300 ease-in-out`}
       >
         {sidebarOpen && (
           <>
             {/* Sidebar Header */}
-            <div className="flex h-14 items-center justify-between border-b border-[#202c33] bg-[#111b21] px-3">
+            <div className="flex h-14 items-center justify-between border-b border-zinc-800 bg-zinc-900/50 px-3">
               <div className="relative flex-1" ref={dropdownRef}>
                 <button
                   onClick={() => setSubjectDropdownOpen(!subjectDropdownOpen)}
-                  className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-[#202c33]"
+                  className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-zinc-800/50"
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2a3942]">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-700">
                     {currentSubject.icon}
                   </div>
                   <div className="flex flex-1 items-center gap-1.5">
-                    <p className="text-sm font-medium text-white">
+                    <p className="text-sm font-medium text-zinc-100">
                       {currentSubject.name}
                     </p>
-                    <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform ${subjectDropdownOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`h-3.5 w-3.5 text-zinc-400 transition-transform ${subjectDropdownOpen ? 'rotate-180' : ''}`} />
                   </div>
                 </button>
                 
                 {subjectDropdownOpen && (
-                  <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-lg border border-[#2a3942] bg-[#111b21] shadow-xl">
+                  <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-900 shadow-xl">
                     <div className="max-h-96 overflow-y-auto py-2">
                       {subjectsLoading ? (
                         <div className="flex items-center justify-center px-4 py-8">
-                          <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                          <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
                         </div>
                       ) : subjects.length === 0 ? (
-                        <div className="px-4 py-3 text-center text-sm text-gray-400">
+                        <div className="px-4 py-3 text-center text-sm text-zinc-400">
                           No subjects available
                         </div>
                       ) : (
@@ -725,18 +725,18 @@ export default function ChatPage() {
                             onClick={() => handleSubjectChange(subj.id)}
                             className={`flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors ${
                               subj.id === subject
-                                ? 'bg-[#2a3942] text-white'
-                                : 'text-gray-300 hover:bg-[#202c33] hover:text-white'
+                                ? 'bg-zinc-700 text-zinc-100'
+                                : 'text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100'
                             }`}
                           >
-                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-black">
+                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 text-black">
                               {subj.icon}
                             </div>
                             <div className="flex-1">
                               <p className="text-sm font-medium">{subj.name}</p>
                             </div>
                             {subj.id === subject && (
-                              <div className="h-2 w-2 rounded-full bg-white"></div>
+                              <div className="h-2 w-2 rounded-full bg-zinc-100"></div>
                             )}
                           </button>
                         ))
@@ -748,7 +748,7 @@ export default function ChatPage() {
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setSidebarOpen(false)}
-                  className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-[#202c33] hover:text-white"
+                  className="rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
                   title="Close sidebar"
                 >
                   <ArrowLeft className="h-4 w-4" />
@@ -757,10 +757,10 @@ export default function ChatPage() {
             </div>
 
             {/* New Chat Button */}
-            <div className="border-b border-[#202c33] bg-[#111b21] p-3">
+            <div className="border-b border-zinc-800 bg-zinc-900/50 p-3">
               <button
                 onClick={createNewSession}
-                className="flex w-full items-center gap-3 rounded-lg border border-[#2a3942] bg-[#111b21] px-3 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#202c33] hover:border-[#2a3942]"
+                className="flex w-full items-center gap-3 rounded-lg border border-zinc-700 bg-zinc-900/50 px-3 py-2.5 text-sm font-medium text-zinc-100 transition-colors hover:bg-zinc-800 hover:border-zinc-600"
               >
                 <Plus className="h-4 w-4" />
                 <span>New chat</span>
@@ -768,13 +768,13 @@ export default function ChatPage() {
             </div>
 
             {/* Search */}
-            <div className="border-b border-[#202c33] bg-[#111b21] p-3">
+            <div className="border-b border-zinc-800 bg-zinc-900/50 p-3">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                 <input
                   type="text"
                   placeholder="Search chats..."
-                  className="w-full rounded-lg bg-[#202c33] py-2 pl-10 pr-4 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-500"
+                  className="w-full rounded-lg bg-zinc-800/50 py-2 pl-10 pr-4 text-sm text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 />
               </div>
             </div>
@@ -784,11 +784,11 @@ export default function ChatPage() {
               <div className="px-2 py-2">
                 {sessionsLoading ? (
                   <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                    <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
                   </div>
                 ) : chatSessions.length === 0 ? (
                   <div className="px-3 py-4 text-center">
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-zinc-400">
                       No chat history. Start a new conversation!
                     </p>
                   </div>
@@ -800,8 +800,8 @@ export default function ChatPage() {
                         onClick={() => switchSession(session.id)}
                         className={`group relative flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors ${
                           currentSessionId === session.id
-                            ? 'bg-[#2a3942] text-white'
-                            : 'text-gray-300 hover:bg-[#202c33]'
+                            ? 'bg-zinc-700 text-zinc-100'
+                            : 'text-zinc-300 hover:bg-zinc-800'
                         }`}
                       >
                         {editingSessionId === session.id ? (
@@ -828,7 +828,7 @@ export default function ChatPage() {
                                   setEditingSessionId(null)
                                 }
                               }}
-                              className="flex-1 rounded bg-[#202c33] px-2 py-1 text-sm text-white focus:outline-none focus:ring-1 focus:ring-gray-500"
+                              className="flex-1 rounded bg-zinc-800 px-2 py-1 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                               autoFocus
                             />
                             <button
@@ -836,7 +836,7 @@ export default function ChatPage() {
                                 e.stopPropagation()
                                 setEditingSessionId(null)
                               }}
-                              className="text-gray-400 hover:text-white"
+                              className="text-zinc-400 hover:text-zinc-100"
                             >
                               <X className="h-3.5 w-3.5" />
                             </button>
@@ -854,14 +854,14 @@ export default function ChatPage() {
                                   setEditingSessionId(session.id)
                                   setEditingTitle(session.title || 'New Chat')
                                 }}
-                                className="rounded p-1 text-gray-400 hover:bg-[#2a3942] hover:text-white"
+                                className="rounded p-1 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100"
                                 title="Rename"
                               >
                                 <Edit3 className="h-3.5 w-3.5" />
                               </button>
                               <button
                                 onClick={(e) => deleteSession(session.id, e)}
-                                className="rounded p-1 text-gray-400 hover:bg-[#2a3942] hover:text-red-400"
+                                className="rounded p-1 text-zinc-400 hover:bg-zinc-700 hover:text-red-400"
                                 title="Delete"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
@@ -882,23 +882,23 @@ export default function ChatPage() {
       {/* Main Chat Area */}
       <div className="flex flex-1 flex-col">
         {/* Chat Header */}
-        <div className="flex h-14 items-center justify-between border-b border-[#202c33] bg-[#0b141a] px-4">
+        <div className="flex h-14 items-center justify-between border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-sm px-4">
           <div className="flex items-center gap-3">
             {!sidebarOpen && (
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-[#202c33] hover:text-white"
+                className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
                 title="Open sidebar"
               >
                 <ArrowLeft className="h-5 w-5 rotate-180" />
               </button>
             )}
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-black">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-100 text-black">
                 {currentSubject.icon}
               </div>
               <div>
-                <p className="text-sm font-medium text-white">
+                <p className="text-sm font-medium text-zinc-100">
                   {currentSubject.name}
                 </p>
               </div>
@@ -907,14 +907,14 @@ export default function ChatPage() {
           <div className="flex items-center gap-2">
             <Link
               href="/dashboard"
-              className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-[#202c33] hover:text-white"
+              className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
               title="Go to Dashboard"
             >
               <Home className="h-4 w-4" />
             </Link>
             <button
               onClick={handleLogout}
-              className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-[#202c33] hover:text-white"
+              className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
               title="Logout"
             >
               <LogOut className="h-4 w-4" />
@@ -923,15 +923,15 @@ export default function ChatPage() {
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto bg-[#0b141a] px-4 py-8">
+        <div className="flex-1 overflow-y-auto bg-transparent px-4 py-8">
           <div className="mx-auto max-w-3xl space-y-6">
             {workspaceError && (
-              <div className="mb-4 rounded-lg border border-gray-600 bg-[#202c33] p-4">
-                <p className="text-sm text-gray-300">
-                  <span className="font-semibold text-white">Warning:</span>{' '}
+              <div className="mb-4 rounded-lg border border-zinc-600 bg-zinc-800 p-4">
+                <p className="text-sm text-zinc-300">
+                  <span className="font-semibold text-zinc-100">Warning:</span>{' '}
                   {workspaceError}
                 </p>
-                <p className="mt-2 text-xs text-gray-400">
+                <p className="mt-2 text-xs text-zinc-400">
                   Make sure you have created a workspace named "{currentSubject.name}" in AnythingLLM and that your API key is configured correctly.
                 </p>
               </div>
@@ -939,13 +939,13 @@ export default function ChatPage() {
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="flex flex-col items-center gap-4">
-                  <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-                  <p className="text-sm text-gray-400">Loading chat history...</p>
+                  <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
+                  <p className="text-sm text-zinc-400">Loading chat history...</p>
                 </div>
               </div>
             ) : messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center">
-                <h2 className="mb-8 text-4xl font-semibold text-white">
+                <h2 className="mb-8 text-4xl font-semibold text-zinc-100">
                   Where should we begin?
                 </h2>
               </div>
@@ -959,15 +959,15 @@ export default function ChatPage() {
                   style={{ animationDelay: `${index * 30}ms` }}
                 >
                   {message.role === 'assistant' && (
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2a3942]">
-                      <Bot className="h-4 w-4 text-gray-300" />
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-700">
+                      <Bot className="h-4 w-4 text-zinc-300" />
                     </div>
                   )}
                   <div
                     className={`relative max-w-[85%] rounded-2xl px-4 py-3 ${
                       message.role === 'user'
-                        ? 'bg-[#005c4b] text-white'
-                        : 'bg-[#202c33] text-gray-100'
+                        ? 'bg-indigo-600 text-zinc-100'
+                        : 'bg-zinc-800/80 backdrop-blur-sm text-zinc-100'
                     }`}
                   >
                     <p className="whitespace-pre-wrap wrap-break-word text-sm leading-relaxed">
@@ -977,8 +977,8 @@ export default function ChatPage() {
                       <p
                         className={`text-xs ${
                           message.role === 'user'
-                            ? 'text-gray-300'
-                            : 'text-gray-400'
+                            ? 'text-zinc-300'
+                            : 'text-zinc-400'
                         }`}
                       >
                         {message.timestamp.toLocaleTimeString([], {
@@ -992,14 +992,14 @@ export default function ChatPage() {
                           className="opacity-0 transition-opacity group-hover:opacity-100 hover:opacity-100"
                           title="Delete message"
                         >
-                          <Trash2 className="h-3 w-3 text-gray-400 hover:text-red-400" />
+                          <Trash2 className="h-3 w-3 text-zinc-400 hover:text-red-400" />
                         </button>
                       )}
                     </div>
                   </div>
                   {message.role === 'user' && (
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2a3942]">
-                      <User className="h-4 w-4 text-gray-300" />
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-700">
+                      <User className="h-4 w-4 text-zinc-300" />
                     </div>
                   )}
                 </div>
@@ -1008,14 +1008,14 @@ export default function ChatPage() {
 
             {sending && (
               <div className="flex animate-in fade-in gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2a3942]">
-                  <Bot className="h-4 w-4 text-gray-300" />
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-700">
+                  <Bot className="h-4 w-4 text-zinc-300" />
                 </div>
-                <div className="rounded-lg bg-[#202c33] px-4 py-3">
+                <div className="rounded-lg bg-zinc-800/80 backdrop-blur-sm px-4 py-3">
                   <div className="flex gap-1">
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-gray-400 [animation-delay:-0.3s]"></div>
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-gray-400 [animation-delay:-0.15s]"></div>
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-gray-400"></div>
+                    <div className="h-2 w-2 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.3s]"></div>
+                    <div className="h-2 w-2 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.15s]"></div>
+                    <div className="h-2 w-2 animate-bounce rounded-full bg-zinc-400"></div>
                   </div>
                 </div>
               </div>
@@ -1026,25 +1026,25 @@ export default function ChatPage() {
         </div>
 
         {/* Input Area - Fixed at Bottom */}
-        <div className="border-t border-[#202c33] bg-[#0b141a] px-4 py-4">
+        <div className="border-t border-zinc-800 bg-zinc-900/80 backdrop-blur-sm px-4 py-4">
           <div className="mx-auto max-w-3xl">
             <form onSubmit={handleSend} className="relative">
-              <div className="relative flex items-center rounded-2xl border border-[#2a3942] bg-[#202c33] px-4 py-3 shadow-lg transition-all focus-within:border-[#2a3942] focus-within:shadow-xl">
-                <Plus className="absolute left-4 h-5 w-5 text-gray-400" />
+              <div className="relative flex items-center rounded-2xl border border-zinc-700 bg-zinc-800/50 px-4 py-3 shadow-lg transition-all focus-within:border-zinc-600 focus-within:shadow-xl">
+                <Plus className="absolute left-4 h-5 w-5 text-zinc-400" />
                 <input
                   ref={inputRef}
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask anything"
-                  className="ml-8 flex-1 bg-transparent text-sm text-white placeholder-gray-400 focus:outline-none"
+                  className="ml-8 flex-1 bg-transparent text-sm text-zinc-100 placeholder-zinc-400 focus:outline-none"
                   disabled={sending || !workspaceId}
                 />
                 <div className="flex items-center gap-2">
                   {input.trim() && !sending && workspaceId && (
                     <button
                       type="submit"
-                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-black transition-opacity hover:opacity-90"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-100 text-black transition-opacity hover:opacity-90"
                       title="Send message"
                     >
                       <Send className="h-4 w-4" />
@@ -1052,13 +1052,13 @@ export default function ChatPage() {
                   )}
                   {sending && (
                     <div className="flex h-8 w-8 items-center justify-center">
-                      <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                      <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
                     </div>
                   )}
                 </div>
               </div>
               {!workspaceId && !workspaceError && (
-                <p className="mt-2 text-center text-xs text-gray-500">
+                <p className="mt-2 text-center text-xs text-zinc-500">
                   Loading workspace...
                 </p>
               )}

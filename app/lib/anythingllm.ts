@@ -20,6 +20,19 @@ export interface Workspace {
   updatedAt?: string
 }
 
+export interface Document {
+  id: number
+  docId: string
+  filename: string
+  docpath: string
+  workspaceId: number
+  metadata: string
+  pinned: boolean
+  watched: boolean
+  createdAt: string
+  lastUpdatedAt: string
+}
+
 export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
@@ -301,6 +314,43 @@ export async function updateWorkspaceEmbeddings(
     return true
   } catch (error) {
     console.error('Error updating embeddings:', error)
+    throw error
+  }
+}
+
+/**
+ * Get documents in a workspace
+ */
+export async function getWorkspaceDocuments(slug: string): Promise<Document[]> {
+  if (!ANYTHINGLLM_API_KEY) {
+    throw new Error('ANYTHINGLLM_API_KEY is not configured')
+  }
+
+  try {
+    const url = `${ANYTHINGLLM_BASE_URL}/workspace/${slug}`
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${ANYTHINGLLM_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Failed to fetch workspace details: ${response.status} ${errorText}`)
+    }
+
+    const data = await response.json()
+    // The API returns { workspace: [ { ... documents: [] } ] }
+    if (data.workspace && Array.isArray(data.workspace) && data.workspace.length > 0) {
+      return data.workspace[0].documents || []
+    }
+    
+    return []
+  } catch (error) {
+    console.error('Error fetching workspace documents:', error)
     throw error
   }
 }

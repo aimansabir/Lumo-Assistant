@@ -35,18 +35,18 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-white dark:bg-black">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-transparent">
       <div className="relative w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-xl dark:border-gray-800 dark:bg-black">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/80 backdrop-blur-sm p-8 shadow-xl">
           {/* Header */}
           <div className="mb-8 text-center">
-            <div className="mb-4 inline-flex items-center justify-center rounded-lg bg-black p-3 dark:bg-white">
-              <Sparkles className="h-6 w-6 text-white dark:text-black" />
+            <div className="mb-4 inline-flex items-center justify-center rounded-lg bg-zinc-100 p-3">
+              <Sparkles className="h-6 w-6 text-black" />
             </div>
-            <h1 className="mb-2 text-3xl font-bold text-black dark:text-white">
+            <h1 className="mb-2 text-3xl font-bold text-zinc-100">
               Welcome Back
             </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-zinc-400">
               Sign in to continue to your dashboard
             </p>
           </div>
@@ -63,7 +63,7 @@ export default function LoginPage() {
             <div className="space-y-2">
               <label
                 htmlFor="email"
-                className="flex items-center gap-2 text-sm font-medium text-black dark:text-white"
+                className="flex items-center gap-2 text-sm font-medium text-zinc-100"
               >
                 <Mail className="h-4 w-4" />
                 Email Address
@@ -74,7 +74,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-black transition-all focus:border-black focus:outline-none focus:ring-2 focus:ring-black/20 dark:border-gray-700 dark:bg-black dark:text-white dark:focus:border-white dark:focus:ring-white/20"
+                className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-zinc-100 transition-all focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 placeholder-zinc-600"
                 placeholder="you@example.com"
               />
             </div>
@@ -82,7 +82,7 @@ export default function LoginPage() {
             <div className="space-y-2">
               <label
                 htmlFor="password"
-                className="flex items-center gap-2 text-sm font-medium text-black dark:text-white"
+                className="flex items-center gap-2 text-sm font-medium text-zinc-100"
               >
                 <Lock className="h-4 w-4" />
                 Password
@@ -93,7 +93,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-black transition-all focus:border-black focus:outline-none focus:ring-2 focus:ring-black/20 dark:border-gray-700 dark:bg-black dark:text-white dark:focus:border-white dark:focus:ring-white/20"
+                className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-zinc-100 transition-all focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 placeholder-zinc-600"
                 placeholder="••••••••"
               />
             </div>
