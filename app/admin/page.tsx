@@ -14,6 +14,7 @@ import {
   BookOpen,
   File
 } from 'lucide-react'
+import LoadingButton from '@/app/components/LoadingButton'
 import { parseWorkspaceName } from '@/app/lib/subject-utils'
 
 interface Workspace {
@@ -60,6 +61,8 @@ export default function AdminPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [workspaceToDelete, setWorkspaceToDelete] = useState<Workspace | null>(null)
   const [confirmInput, setConfirmInput] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const [isAdminLoggingOut, setIsAdminLoggingOut] = useState(false)
 
   useEffect(() => {
     const checkAdminAuth = async () => {
@@ -142,6 +145,7 @@ export default function AdminPage() {
     }
 
     try {
+      setDeleting(true)
       const res = await fetch(`/api/admin/workspaces/${workspaceToDelete.slug}`, { method: 'DELETE' })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
@@ -159,6 +163,7 @@ export default function AdminPage() {
       console.error(err)
       setUploadStatus({ type: 'error', message: err.message || 'Failed to delete subject' })
     } finally {
+      setDeleting(false)
       handleModalCancel()
     }
   }
@@ -313,6 +318,7 @@ export default function AdminPage() {
 
   const handleAdminLogout = async () => {
     try {
+      setIsAdminLoggingOut(true)
       await fetch('/api/admin/logout', { method: 'POST' })
     } catch (err) {
       // ignore
@@ -320,6 +326,7 @@ export default function AdminPage() {
     setIsAdminAuthenticated(false)
     setWorkspaces([])
     setSelectedWorkspace(null)
+    setIsAdminLoggingOut(false)
   }
 
   if (checkingAuth || loading) {
@@ -414,12 +421,9 @@ export default function AdminPage() {
             Back to App
           </button>
             {isAdminAuthenticated && (
-              <button
-                onClick={handleAdminLogout}
-                className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors"
-              >
+              <LoadingButton loading={isAdminLoggingOut} onClick={handleAdminLogout} className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors">
                 Logout
-              </button>
+              </LoadingButton>
             )}
           </div>
         </div>
@@ -481,13 +485,14 @@ export default function AdminPage() {
                     </label>
                   </div>
                 </div>
-                <button
+                <LoadingButton
                   type="submit"
+                  loading={isCreating}
                   disabled={isCreating || !newSubjectName || !isTitleCase(newSubjectName)}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-colors"
+                  className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
                 >
                   {isCreating ? 'Creating...' : 'Create Subject'}
-                </button>
+                </LoadingButton>
               </form>
             </div>
 
@@ -587,11 +592,12 @@ export default function AdminPage() {
                       Upload PDF, TXT, DOCX files to train this subject.
                     </p>
                     <div className="mt-6">
-                      <label
-                        htmlFor="file-upload"
-                        className={`cursor-pointer inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors ${
-                          uploading ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
+                      <LoadingButton
+                        as={"label"}
+                        htmlFor={"file-upload"}
+                        loading={uploading}
+                        disabled={uploading}
+                        className={`cursor-pointer inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors`}
                       >
                         {uploading ? (
                           <>
@@ -614,7 +620,7 @@ export default function AdminPage() {
                           accept=".pdf,.txt,.docx,.md,.csv"
                           multiple
                         />
-                      </label>
+                      </LoadingButton>
                     </div>
                   </div>
 
@@ -747,13 +753,14 @@ export default function AdminPage() {
               >
                 Cancel
               </button>
-              <button
+              <LoadingButton
+                loading={deleting}
                 onClick={performDeleteWorkspace}
                 disabled={confirmInput.trim() !== (parseWorkspaceName(workspaceToDelete.name)?.name || workspaceToDelete.name)}
                 className="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
               >
                 Delete Subject
-              </button>
+              </LoadingButton>
             </div>
           </div>
         </div>

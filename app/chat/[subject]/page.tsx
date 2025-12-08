@@ -21,7 +21,9 @@ import { Send,
   X,
   ChevronDown,
 } from 'lucide-react'
+import LoadingButton from '@/app/components/LoadingButton'
 import { parseWorkspaceName, getSubjectIcon } from '@/app/lib/subject-utils'
+import LogoutButton from '@/app/components/LogoutButton'
 
 interface Message {
   id: string
@@ -706,42 +708,39 @@ export default function ChatPage() {
                     <ChevronDown className={`h-3.5 w-3.5 text-zinc-400 transition-transform ${subjectDropdownOpen ? 'rotate-180' : ''}`} />
                   </div>
                 </button>
-                
                 {subjectDropdownOpen && (
-                  <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-900 shadow-xl">
-                    <div className="max-h-96 overflow-y-auto py-2">
-                      {subjectsLoading ? (
-                        <div className="flex items-center justify-center px-4 py-8">
-                          <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
-                        </div>
-                      ) : subjects.length === 0 ? (
-                        <div className="px-4 py-3 text-center text-sm text-zinc-400">
-                          No subjects available
-                        </div>
-                      ) : (
-                        subjects.map((subj) => (
-                          <button
-                            key={subj.id}
-                            onClick={() => handleSubjectChange(subj.id)}
-                            className={`flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors ${
-                              subj.id === subject
-                                ? 'bg-zinc-700 text-zinc-100'
-                                : 'text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100'
-                            }`}
-                          >
-                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 text-black">
-                              {subj.icon}
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-sm font-medium">{subj.name}</p>
-                            </div>
-                            {subj.id === subject && (
-                              <div className="h-2 w-2 rounded-full bg-zinc-100"></div>
-                            )}
-                          </button>
-                        ))
-                      )}
-                    </div>
+                  <div className="absolute left-0 top-full mt-2 w-full rounded-lg border border-zinc-800 bg-zinc-900/50 shadow-lg z-20">
+                    {subjectsLoading ? (
+                      <div className="px-4 py-3 text-center">
+                        <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
+                      </div>
+                    ) : subjects.length === 0 ? (
+                      <div className="px-4 py-3 text-center text-sm text-zinc-400">
+                        No subjects available
+                      </div>
+                    ) : (
+                      subjects.map((subj) => (
+                        <button
+                          key={subj.id}
+                          onClick={() => handleSubjectChange(subj.id)}
+                          className={`flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors ${
+                            subj.id === subject
+                              ? 'bg-zinc-700 text-zinc-100'
+                              : 'text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100'
+                          }`}
+                        >
+                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 text-black">
+                            {subj.icon}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">{subj.name}</p>
+                          </div>
+                          {subj.id === subject && (
+                            <div className="h-2 w-2 rounded-full bg-zinc-100"></div>
+                          )}
+                        </button>
+                      ))
+                    )}
                   </div>
                 )}
               </div>
@@ -753,6 +752,8 @@ export default function ChatPage() {
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </button>
+                {/* Logout button should live on the header right side, not inside the dropdown */}
+                <LogoutButton />
               </div>
             </div>
 
@@ -1041,20 +1042,15 @@ export default function ChatPage() {
                   disabled={sending || !workspaceId}
                 />
                 <div className="flex items-center gap-2">
-                  {input.trim() && !sending && workspaceId && (
-                    <button
-                      type="submit"
-                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-100 text-black transition-opacity hover:opacity-90"
-                      title="Send message"
-                    >
-                      <Send className="h-4 w-4" />
-                    </button>
-                  )}
-                  {sending && (
-                    <div className="flex h-8 w-8 items-center justify-center">
-                      <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
-                    </div>
-                  )}
+                  <LoadingButton
+                    type="submit"
+                    loading={sending}
+                    disabled={sending || !input.trim() || !workspaceId}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-100 text-black transition-opacity hover:opacity-90"
+                    title="Send message"
+                  >
+                    <Send className="h-4 w-4" />
+                  </LoadingButton>
                 </div>
               </div>
               {!workspaceId && !workspaceError && (

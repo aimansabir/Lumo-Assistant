@@ -11,6 +11,7 @@ import {
   Sparkles,
   Loader2,
 } from 'lucide-react'
+import LogoutButton from '@/app/components/LogoutButton'
 import { parseWorkspaceName, getSubjectIcon, getSubjectDescription } from '@/app/lib/subject-utils'
 
 interface Subject {
@@ -163,13 +164,7 @@ export default function DashboardPage() {
                 {user?.email}
               </p>
             </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2 text-sm font-medium text-zinc-100 transition-colors hover:bg-zinc-800"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Logout</span>
-            </button>
+            <LogoutButton />
           </div>
         </div>
       </header>

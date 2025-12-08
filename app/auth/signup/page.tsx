@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/app/lib/supabase/client'
 import Link from 'next/link'
 import ErrorCard from '@/app/components/ErrorCard'
+import LoadingButton from '@/app/components/LoadingButton'
 import { UserPlus, Mail, Lock, Sparkles } from 'lucide-react'
 
 export default function SignupPage() {
@@ -132,8 +133,9 @@ export default function SignupPage() {
               />
             </div>
 
-            <button
+            <LoadingButton
               type="submit"
+              loading={loading}
               disabled={loading}
               className="group relative w-full rounded-lg bg-black px-4 py-3 font-semibold text-white shadow-lg transition-all hover:bg-gray-900 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-gray-100"
             >
@@ -150,7 +152,7 @@ export default function SignupPage() {
                   </>
                 )}
               </span>
-            </button>
+            </LoadingButton>
           </form>
 
           {/* Footer */}
