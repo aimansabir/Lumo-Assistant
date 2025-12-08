@@ -20,6 +20,7 @@ interface Workspace {
   id: string
   name: string
   slug: string
+  level?: string | null
 }
 
 interface Document {
@@ -45,9 +46,16 @@ export default function AdminPage() {
   
   // Form states
   const [newSubjectName, setNewSubjectName] = useState('')
+    const isTitleCase = (name: string) => {
+      const words = name.trim().split(/\s+/)
+      if (words.length === 0) return false
+      return words.every((w) => /^[A-Z][a-zA-Z]*$/.test(w))
+    }
+  const [subjectNameError, setSubjectNameError] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [uploadStatus, setUploadStatus] = useState<{type: 'success' | 'error', message: string} | null>(null)
+  const [newSubjectLevel, setNewSubjectLevel] = useState<'O' | 'A'>('O')
 
   useEffect(() => {
     const checkAdminAuth = async () => {
@@ -107,25 +115,45 @@ export default function AdminPage() {
     }
   }
 
+  // Use parseWorkspaceName to get level if present
+  function getWorkspaceLevel(ws: Workspace) {
+    const parsed = parseWorkspaceName(ws.name)
+    return parsed?.level
+  }
+
   const handleCreateSubject = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newSubjectName.trim()) return
 
+    setSubjectNameError('')
+    // Validate Title Case: each word must start with uppercase letter
+    function isTitleCase(name: string) {
+      const words = name.trim().split(/\s+/)
+      if (words.length === 0) return false
+      return words.every((w) => /^[A-Z][a-zA-Z]*$/.test(w))
+    }
+
+    if (!isTitleCase(newSubjectName)) {
+      setSubjectNameError('Subject name must be Title Case. Example: "Computer Science"')
+      return
+    }
+
     setIsCreating(true)
     try {
-      // Format: lumo_subjectname
-      const formattedName = `lumo_${newSubjectName.toLowerCase().replace(/\s+/g, '_')}`
+      // We'll pass raw subject name & level to the server; server will format and prefix as lumo_subject-name_level
+      // e.g., 'Computer Science' + 'O' -> 'lumo_computer-science_O'
       
       const res = await fetch('/api/admin/workspaces', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: formattedName })
+        body: JSON.stringify({ name: newSubjectName, level: newSubjectLevel })
       })
 
       if (!res.ok) throw new Error('Failed to create workspace')
 
       await fetchWorkspaces()
       setNewSubjectName('')
+      setNewSubjectLevel('O')
       setUploadStatus({ type: 'success', message: 'Subject created successfully!' })
     } catch (error) {
       setUploadStatus({ type: 'error', message: 'Failed to create subject' })
@@ -362,25 +390,52 @@ export default function AdminPage() {
                     Subject Name
                   </label>
                   <div className="mt-1 flex rounded-md shadow-sm">
-                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-zinc-700 bg-zinc-800 text-zinc-400 sm:text-sm">
-                      lumo_
-                    </span>
                     <input
                       type="text"
                       id="subjectName"
                       value={newSubjectName}
-                      onChange={(e) => setNewSubjectName(e.target.value)}
+                      onChange={(e) => {
+                        setNewSubjectName(e.target.value)
+                        if (subjectNameError) setSubjectNameError('')
+                      }}
                       className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md border border-zinc-700 bg-zinc-900 text-zinc-100 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm placeholder-zinc-600"
-                      placeholder="physics"
+                      placeholder="Computer Science"
                     />
                   </div>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    Will be created as: lumo_{newSubjectName.toLowerCase().replace(/\s+/g, '_')}
-                  </p>
+                    {subjectNameError && (
+                      <p className="mt-1 text-xs text-red-400">{subjectNameError}</p>
+                    )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300">Level</label>
+                  <div className="mt-2 flex gap-2">
+                    <label className={`inline-flex items-center gap-2 px-3 py-2 rounded-md border ${newSubjectLevel === 'O' ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-zinc-900 border-zinc-700 text-zinc-200'}`}>
+                      <input
+                        type="radio"
+                        name="level"
+                        value="O"
+                        checked={newSubjectLevel === 'O'}
+                        onChange={() => setNewSubjectLevel('O')}
+                        className="accent-indigo-500"
+                      />
+                      O Level
+                    </label>
+                    <label className={`inline-flex items-center gap-2 px-3 py-2 rounded-md border ${newSubjectLevel === 'A' ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-zinc-900 border-zinc-700 text-zinc-200'}`}>
+                      <input
+                        type="radio"
+                        name="level"
+                        value="A"
+                        checked={newSubjectLevel === 'A'}
+                        onChange={() => setNewSubjectLevel('A')}
+                        className="accent-indigo-500"
+                      />
+                      A Level
+                    </label>
+                  </div>
                 </div>
                 <button
                   type="submit"
-                  disabled={isCreating || !newSubjectName}
+                  disabled={isCreating || !newSubjectName || !isTitleCase(newSubjectName)}
                   className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-colors"
                 >
                   {isCreating ? 'Creating...' : 'Create Subject'}
@@ -412,7 +467,19 @@ export default function AdminPage() {
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-zinc-200">{displayName}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-zinc-200">{displayName}</span>
+                          {(() => {
+                            const level = getWorkspaceLevel(ws)
+                            if (!level) return null
+                            const badge = level.toString().toUpperCase()
+                            return (
+                              <span className={`text-xs font-mono px-2 py-0.5 rounded ${badge === 'O' ? 'bg-indigo-600 text-zinc-100' : 'bg-indigo-400 text-zinc-900'}`}>
+                                {badge} L
+                              </span>
+                            )
+                          })()}
+                        </div>
                         <span className="text-xs text-zinc-500 font-mono">{ws.slug}</span>
                       </div>
                     </li>
@@ -439,6 +506,15 @@ export default function AdminPage() {
                     <p className="mt-1 text-sm text-zinc-400">
                       Workspace Slug: <span className="font-mono text-indigo-400">{selectedWorkspace.slug}</span>
                     </p>
+                    {(() => {
+                      const level = getWorkspaceLevel(selectedWorkspace)
+                      if (!level) return null
+                      return (
+                        <p className="mt-1 text-sm text-zinc-400">
+                          Level: <span className="font-mono text-indigo-400">{level.toUpperCase()}</span>
+                        </p>
+                      )
+                    })()}
                   </div>
                   <div className="flex space-x-2">
                     {/* Add more actions here if needed */}

@@ -10,7 +10,7 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   try {
-    const slug = params.slug
+    const slug = await params.slug
     const documents = await getWorkspaceDocuments(slug)
     
     return NextResponse.json({ documents })

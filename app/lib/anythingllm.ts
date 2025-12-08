@@ -16,6 +16,7 @@ export interface Workspace {
   id: string
   name: string
   slug: string
+  level?: string
   createdAt?: string
   updatedAt?: string
 }
@@ -217,7 +218,7 @@ export async function getWorkspace(
 /**
  * Create a new workspace
  */
-export async function createWorkspace(name: string): Promise<Workspace> {
+export async function createWorkspace(name: string, level?: string): Promise<Workspace> {
   if (!ANYTHINGLLM_API_KEY) {
     throw new Error('ANYTHINGLLM_API_KEY is not configured')
   }
@@ -231,7 +232,7 @@ export async function createWorkspace(name: string): Promise<Workspace> {
         'Authorization': `Bearer ${ANYTHINGLLM_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, level }),
     })
 
     if (!response.ok) {

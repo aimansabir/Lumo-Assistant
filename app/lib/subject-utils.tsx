@@ -19,6 +19,7 @@ export function parseWorkspaceName(workspaceName: string): {
   id: string
   name: string
   baseSubject: string
+  level?: string | null
 } | null {
   let prefix = ''
   if (workspaceName.startsWith('alphachat_')) {
@@ -33,26 +34,21 @@ export function parseWorkspaceName(workspaceName: string): {
   const rest = workspaceName.substring(prefix.length)
   if (!rest) return null
 
-  // Handle both underscore and hyphen separators
-  // Split by underscore first, then check for hyphen in parts
+  // New naming format: lumo_{hyphen-separated-subject}_{LEVEL}
+  // e.g., lumo_computer-science_O
   let baseSubject = rest
   let suffix = ''
-
-  // Check if there's a hyphen separator (e.g., physics-o, physics-a)
-  if (rest.includes('-')) {
-    const hyphenParts = rest.split('-')
-    baseSubject = hyphenParts[0]
-    suffix = hyphenParts.slice(1).join('-')
-  } else {
-    // Check for underscore separator
-    const parts = rest.split('_')
-    baseSubject = parts[0]
-    suffix = parts.slice(1).join('_')
+  const lastUnderscore = rest.lastIndexOf('_')
+  if (lastUnderscore > -1) {
+    baseSubject = rest.substring(0, lastUnderscore)
+    suffix = rest.substring(lastUnderscore + 1)
   }
 
-  // Capitalize first letter of base subject
-  const subjectName =
-    baseSubject.charAt(0).toUpperCase() + baseSubject.slice(1)
+  // Convert hyphenated baseSubject to spaced, Title Case display name
+  const subjectName = baseSubject
+    .split('-')
+    .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : ''))
+    .join(' ')
 
   // Format display name
   let displayName = subjectName
@@ -84,10 +80,19 @@ export function parseWorkspaceName(workspaceName: string): {
     }
   }
 
+  // Determine level if suffix is single letter O/A
+  let level: string | null = null
+  if (suffix) {
+    const suffixLower = suffix.toLowerCase()
+    if (suffixLower === 'o' || suffixLower === 'o-level' || suffixLower === 'olevel') level = 'O'
+    else if (suffixLower === 'a' || suffixLower === 'a-level' || suffixLower === 'alevel') level = 'A'
+  }
+
   return {
     id: workspaceName, // Use full workspace name as ID
     name: displayName,
     baseSubject: baseSubject.toLowerCase(),
+    level,
   }
 }
 

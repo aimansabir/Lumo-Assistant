@@ -49,3 +49,8 @@ ADMIN_JWT_SECRET=a-long-random-secret-string
 - `ADMIN_JWT_SECRET`: a secret used to sign a token. Keep this safe and long.
 
 During local development, the cookie used by this auth will not use the `Secure` attribute; in production the cookie will be marked Secure and sent only over HTTPS.
+
+Notes on creating subjects from the Admin UI:
+- Subject names must be Title Case — each word starts with a capital letter (e.g., "Computer Science"). Submissions that are not Title Case will be rejected.
+- Only O Level or A Level are supported. Choose the level when creating the subject.
+- The internal workspace handle will be generated on the backend in the form: `lumo_{subject-with-hyphens}_{LEVEL}` — e.g., `lumo_computer-science_O`.
