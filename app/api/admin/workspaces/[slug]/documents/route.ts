@@ -4,13 +4,14 @@ import { isRequestAdmin } from '@/app/lib/admin-auth'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: any }
 ) {
   if (!isRequestAdmin(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   try {
-    const slug = await params.slug
+    const resolvedParams = await params
+    const slug = resolvedParams.slug
     const documents = await getWorkspaceDocuments(slug)
     
     return NextResponse.json({ documents })

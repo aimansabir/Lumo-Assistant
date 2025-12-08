@@ -5,14 +5,15 @@ import { createClient } from '@/app/lib/supabase/server'
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: any }
 ) {
   if (!isRequestAdmin(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {
-    const slug = params.slug
+    const resolvedParams = await params
+    const slug = resolvedParams.slug
     // Find workspace by slug to get underlying id
     const workspace = await getWorkspace(slug)
     if (!workspace) {
