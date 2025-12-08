@@ -56,6 +56,10 @@ export default function AdminPage() {
   const [uploading, setUploading] = useState(false)
   const [uploadStatus, setUploadStatus] = useState<{type: 'success' | 'error', message: string} | null>(null)
   const [newSubjectLevel, setNewSubjectLevel] = useState<'O' | 'A'>('O')
+  // Delete confirmation modal states
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [workspaceToDelete, setWorkspaceToDelete] = useState<Workspace | null>(null)
+  const [confirmInput, setConfirmInput] = useState('')
 
   useEffect(() => {
     const checkAdminAuth = async () => {
@@ -112,6 +116,50 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error('Failed to fetch workspaces', error)
+    }
+  }
+
+  function openDeleteModal(e: React.MouseEvent, ws: Workspace) {
+    e.stopPropagation()
+    setWorkspaceToDelete(ws)
+    setConfirmInput('')
+    setDeleteModalOpen(true)
+  }
+
+  const handleModalCancel = () => {
+    setDeleteModalOpen(false)
+    setWorkspaceToDelete(null)
+    setConfirmInput('')
+  }
+
+  const performDeleteWorkspace = async () => {
+    if (!workspaceToDelete) return
+    // Validate typed confirmation (case-sensitive exact match of display name)
+    const displayName = parseWorkspaceName(workspaceToDelete.name)?.name || workspaceToDelete.name
+    if (confirmInput.trim() !== displayName.trim()) {
+      setUploadStatus({ type: 'error', message: 'Confirmation text does not match subject name' })
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/admin/workspaces/${workspaceToDelete.slug}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Failed to delete workspace')
+      }
+
+      // Refresh list and clear selection if needed
+      await fetchWorkspaces()
+      if (selectedWorkspace?.id === workspaceToDelete.id) {
+        setSelectedWorkspace(null)
+        setDocuments([])
+      }
+      setUploadStatus({ type: 'success', message: 'Subject deleted successfully' })
+    } catch (err: any) {
+      console.error(err)
+      setUploadStatus({ type: 'error', message: err.message || 'Failed to delete subject' })
+    } finally {
+      handleModalCancel()
     }
   }
 
@@ -447,7 +495,7 @@ export default function AdminPage() {
               <div className="px-6 py-4 border-b border-zinc-800">
                 <h2 className="text-lg font-medium text-zinc-100">Existing Subjects</h2>
               </div>
-              <ul className="divide-y divide-zinc-800 max-h-[600px] overflow-y-auto">
+                <ul className="divide-y divide-zinc-800 max-h-[600px] overflow-y-auto">
                 {workspaces.map((ws) => {
                   const parsed = parseWorkspaceName(ws.name)
                   const displayName = parsed ? parsed.name : ws.name
@@ -480,7 +528,16 @@ export default function AdminPage() {
                             )
                           })()}
                         </div>
-                        <span className="text-xs text-zinc-500 font-mono">{ws.slug}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-zinc-500 font-mono">{ws.slug}</span>
+                          <button
+                            onClick={(e) => openDeleteModal(e, ws)}
+                            title="Delete subject"
+                            className="text-red-400 hover:text-red-200 transition-colors px-2"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
                     </li>
                   )
@@ -658,6 +715,49 @@ export default function AdminPage() {
           </div>
         </div>
       </main>
+
+      {/* Delete confirmation modal */}
+      {deleteModalOpen && workspaceToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/50" onClick={handleModalCancel}></div>
+          <div className="relative bg-zinc-900 border border-zinc-800 rounded-lg shadow-lg p-6 max-w-lg w-full mx-4 z-10">
+            <h3 className="text-lg font-medium text-zinc-100">Confirm Delete</h3>
+            <p className="mt-2 text-sm text-zinc-300">This will permanently delete the subject and all associated documents, sessions and messages. This action cannot be undone.</p>
+            <div className="mt-4 bg-zinc-900/70 border border-zinc-800 rounded-md p-4">
+              <p className="text-sm text-zinc-200">Subject:</p>
+              <p className="text-sm font-medium text-zinc-100 mt-1">{parseWorkspaceName(workspaceToDelete.name)?.name || workspaceToDelete.name}</p>
+              <p className="text-xs text-zinc-400 mt-1">Workspace slug: <span className="font-mono text-indigo-400">{workspaceToDelete.slug}</span></p>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm text-zinc-300">Type the subject name to confirm:</label>
+              <input
+                type="text"
+                value={confirmInput}
+                onChange={(e) => setConfirmInput(e.target.value)}
+                className="mt-2 block w-full px-3 py-2 rounded-md border border-zinc-700 bg-zinc-900 text-zinc-100"
+                placeholder={parseWorkspaceName(workspaceToDelete.name)?.name || workspaceToDelete.name}
+              />
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={handleModalCancel}
+                className="px-4 py-2 rounded-md border border-zinc-700 text-zinc-200 hover:bg-zinc-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={performDeleteWorkspace}
+                disabled={confirmInput.trim() !== (parseWorkspaceName(workspaceToDelete.name)?.name || workspaceToDelete.name)}
+                className="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
+              >
+                Delete Subject
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

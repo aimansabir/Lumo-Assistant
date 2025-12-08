@@ -320,6 +320,54 @@ export async function updateWorkspaceEmbeddings(
 }
 
 /**
+ * Delete a workspace in AnythingLLM
+ * Tries a couple of common DELETE endpoint shapes and returns true if one succeeds.
+ */
+export async function deleteWorkspace(identifier: string): Promise<boolean> {
+  if (!ANYTHINGLLM_API_KEY) {
+    throw new Error('ANYTHINGLLM_API_KEY is not configured')
+  }
+
+  const endpoints = [
+    `${ANYTHINGLLM_BASE_URL}/workspace/${identifier}`,
+    `${ANYTHINGLLM_BASE_URL}/workspaces/${identifier}`,
+  ]
+
+  let lastErr: any = null
+  for (const url of endpoints) {
+    try {
+      const res = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${ANYTHINGLLM_API_KEY}`,
+        },
+      })
+
+      if (res.ok) {
+        return true
+      } else {
+        // If this endpoint wasn't supported, try the next one
+        const text = await res.text().catch(() => '')
+        lastErr = new Error(`Failed to delete workspace: ${res.status} ${text}`)
+        continue
+      }
+    } catch (err: any) {
+      lastErr = err
+      continue
+    }
+  }
+
+  // If none succeeded, throw the last encountered error
+  if (lastErr) {
+    console.error('Error deleting workspace:', lastErr)
+    throw lastErr
+  }
+
+  // Should not be reachable but return false as fallback
+  return false
+}
+
+/**
  * Get documents in a workspace
  */
 export async function getWorkspaceDocuments(slug: string): Promise<Document[]> {
