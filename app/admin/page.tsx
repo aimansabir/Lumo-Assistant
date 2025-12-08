@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/app/lib/supabase/client'
 import { 
   Plus, 
   Upload, 
@@ -34,6 +33,11 @@ interface Document {
 export default function AdminPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const [checkingAuth, setCheckingAuth] = useState(true)
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false)
+  const [adminId, setAdminId] = useState('')
+  const [adminPassword, setAdminPassword] = useState('')
+  const [adminError, setAdminError] = useState('')
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
   const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(null)
   const [documents, setDocuments] = useState<Document[]>([])
@@ -46,22 +50,26 @@ export default function AdminPage() {
   const [uploadStatus, setUploadStatus] = useState<{type: 'success' | 'error', message: string} | null>(null)
 
   useEffect(() => {
-    const checkUser = async () => {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-
-      if (!user) {
-        router.push('/auth/login')
-        return
+    const checkAdminAuth = async () => {
+      setCheckingAuth(true)
+      try {
+        const res = await fetch('/api/admin/auth')
+        if (res.ok) {
+          setIsAdminAuthenticated(true)
+          await fetchWorkspaces()
+        } else {
+          setIsAdminAuthenticated(false)
+        }
+      } catch (err) {
+        console.error('Auth check failed', err)
+        setIsAdminAuthenticated(false)
+      } finally {
+        setLoading(false)
+        setCheckingAuth(false)
       }
-      
-      // TODO: Add admin role check here if needed
-      
-      fetchWorkspaces()
-      setLoading(false)
     }
 
-    checkUser()
+    checkAdminAuth()
   }, [router])
 
   useEffect(() => {
@@ -203,10 +211,113 @@ export default function AdminPage() {
     }
   }
 
-  if (loading) {
+  const handleAdminLogin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    setAdminError('')
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: adminId, password: adminPassword })
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.message || 'Invalid credentials')
+      }
+
+      setIsAdminAuthenticated(true)
+      setAdminId('')
+      setAdminPassword('')
+      await fetchWorkspaces()
+    } catch (err: any) {
+      setAdminError(err.message || 'Login failed')
+    }
+  }
+
+  const handleAdminLogout = async () => {
+    try {
+      await fetch('/api/admin/logout', { method: 'POST' })
+    } catch (err) {
+      // ignore
+    }
+    setIsAdminAuthenticated(false)
+    setWorkspaces([])
+    setSelectedWorkspace(null)
+  }
+
+  if (checkingAuth || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-transparent">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+      </div>
+    )
+  }
+
+  if (!isAdminAuthenticated) {
+    return (
+      <div className="min-h-screen bg-transparent">
+        <header className="bg-zinc-900/80 backdrop-blur-sm border-b border-zinc-800 sticky top-0 z-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <Shield className="h-6 w-6 text-indigo-500" />
+              <h1 className="text-xl font-bold text-zinc-100">Admin Dashboard</h1>
+            </div>
+            <div>
+              <button
+                onClick={() => router.push('/')}
+                className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors"
+              >
+                Home
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex justify-center">
+            <div className="bg-zinc-900/80 backdrop-blur-sm border border-zinc-800 rounded-lg shadow p-8 w-full max-w-md">
+              <h3 className="text-lg font-medium text-zinc-100 mb-4">Admin Login</h3>
+              <form onSubmit={(e) => handleAdminLogin(e)} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-300">Admin ID</label>
+                  <input
+                    className="mt-1 block w-full px-3 py-2 rounded-md border border-zinc-700 bg-zinc-900 text-zinc-100"
+                    value={adminId}
+                    onChange={(e) => setAdminId(e.target.value)}
+                    autoComplete="username"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-300">Password</label>
+                  <input
+                    className="mt-1 block w-full px-3 py-2 rounded-md border border-zinc-700 bg-zinc-900 text-zinc-100"
+                    type="password"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    autoComplete="current-password"
+                  />
+                </div>
+                {adminError && <p className="text-xs text-red-400">{adminError}</p>}
+                <div className="flex justify-between items-center">
+                  <button
+                    type="submit"
+                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    Login
+                  </button>
+                  <button
+                    type="button"
+                    className="text-sm text-zinc-400"
+                    onClick={() => router.push('/')}
+                  >
+                    Back
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </main>
       </div>
     )
   }
@@ -219,12 +330,22 @@ export default function AdminPage() {
             <Shield className="h-6 w-6 text-indigo-500" />
             <h1 className="text-xl font-bold text-zinc-100">Admin Dashboard</h1>
           </div>
-          <button 
-            onClick={() => router.push('/dashboard')}
+          <div className="flex gap-2 items-center">
+            <button 
+              onClick={() => router.push('/dashboard')}
             className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors"
           >
             Back to App
           </button>
+            {isAdminAuthenticated && (
+              <button
+                onClick={handleAdminLogout}
+                className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors"
+              >
+                Logout
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -370,7 +491,7 @@ export default function AdminPage() {
                       uploadStatus.type === 'success' ? 'bg-green-900/20 border border-green-900' : 'bg-red-900/20 border border-red-900'
                     }`}>
                       <div className="flex">
-                        <div className="flex-shrink-0">
+                        <div className="shrink-0">
                           {uploadStatus.type === 'success' ? (
                             <CheckCircle className="h-5 w-5 text-green-400" />
                           ) : (
@@ -412,7 +533,7 @@ export default function AdminPage() {
                             return (
                             <li key={doc.id} className="px-4 py-3 flex items-center justify-between hover:bg-zinc-800/30 transition-colors">
                               <div className="flex items-center gap-3 overflow-hidden">
-                                <File className="h-5 w-5 text-indigo-400 flex-shrink-0" />
+                                <File className="h-5 w-5 text-indigo-400 shrink-0" />
                                 <div className="min-w-0">
                                   <p className="text-sm font-medium text-zinc-200 truncate" title={displayName}>
                                     {displayName}
@@ -432,7 +553,7 @@ export default function AdminPage() {
                   {/* Instructions */}
                   <div className="bg-blue-900/20 border border-blue-900 rounded-md p-4">
                     <div className="flex">
-                      <div className="flex-shrink-0">
+                      <div className="shrink-0">
                         <BookOpen className="h-5 w-5 text-blue-400" />
                       </div>
                       <div className="ml-3">

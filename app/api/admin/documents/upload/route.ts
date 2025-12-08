@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server'
 import { uploadDocument } from '@/app/lib/anythingllm'
+import { isRequestAdmin } from '@/app/lib/admin-auth'
 
 export async function POST(request: Request) {
+  if (!isRequestAdmin(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
   try {
     const formData = await request.formData()
     const file = formData.get('file')

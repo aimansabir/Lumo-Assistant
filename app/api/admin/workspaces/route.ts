@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createWorkspace, fetchWorkspaces } from '@/app/lib/anythingllm'
+import { isRequestAdmin } from '@/app/lib/admin-auth'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    if (!isRequestAdmin(request)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     const workspaces = await fetchWorkspaces()
     return NextResponse.json({ workspaces })
   } catch (error: any) {
@@ -14,6 +18,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (!isRequestAdmin(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
   try {
     const { name } = await request.json()
     

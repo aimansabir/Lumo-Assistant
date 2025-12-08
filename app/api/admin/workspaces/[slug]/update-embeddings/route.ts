@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server'
 import { updateWorkspaceEmbeddings } from '@/app/lib/anythingllm'
+import { isRequestAdmin } from '@/app/lib/admin-auth'
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  if (!isRequestAdmin(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
   try {
     const { slug } = await params
     const { adds, deletes } = await request.json()
