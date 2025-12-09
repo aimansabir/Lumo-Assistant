@@ -13,7 +13,7 @@ import {
 
 /**
  * Parse workspace name to extract subject information
- * Format: alphachat_<subject> or lumo_<subject>
+ * Format: lumo_<subject>
  */
 export function parseWorkspaceName(workspaceName: string): {
   id: string
@@ -21,14 +21,8 @@ export function parseWorkspaceName(workspaceName: string): {
   baseSubject: string
   level?: string | null
 } | null {
-  let prefix = ''
-  if (workspaceName.startsWith('alphachat_')) {
-    prefix = 'alphachat_'
-  } else if (workspaceName.startsWith('lumo_')) {
-    prefix = 'lumo_'
-  } else {
-    return null
-  }
+  const prefix = 'lumo_'
+  if (!workspaceName.startsWith(prefix)) return null
 
   // Remove prefix
   const rest = workspaceName.substring(prefix.length)

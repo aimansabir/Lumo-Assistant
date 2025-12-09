@@ -64,9 +64,9 @@ export default function DashboardPage() {
         return
       }
 
-      // Filter workspaces that start with 'alphachat_' or 'lumo_'
+      // Filter workspaces that start with 'lumo_'
       const appWorkspaces = workspacesData.filter((ws: any) =>
-        ws.name && (ws.name.startsWith('alphachat_') || ws.name.startsWith('lumo_'))
+        ws.name && ws.name.startsWith('lumo_')
       )
 
       // Parse workspaces into subjects
