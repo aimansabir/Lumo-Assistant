@@ -21,6 +21,16 @@ export interface Workspace {
   updatedAt?: string
 }
 
+export interface WorkspaceConfig {
+  similarityThreshold?: number
+  openAiTemp?: number
+  openAiHistory?: number
+  openAiPrompt?: string
+  queryRefusalResponse?: string
+  chatMode?: 'chat' | 'query'
+  topN?: number
+}
+
 export interface Document {
   id: number
   docId: string
@@ -218,30 +228,62 @@ export async function getWorkspace(
 /**
  * Create a new workspace
  */
-export async function createWorkspace(name: string, level?: string): Promise<Workspace> {
+export async function createWorkspace(name: string, level?: string, config?: Partial<WorkspaceConfig>): Promise<Workspace> {
   if (!ANYTHINGLLM_API_KEY) {
     throw new Error('ANYTHINGLLM_API_KEY is not configured')
   }
 
   try {
     const url = `${ANYTHINGLLM_BASE_URL}/workspace/new`
+    // Default configuration if not provided; enforce query mode and a detailed system prompt
+    const defaultConfig: WorkspaceConfig = {
+      similarityThreshold: 0.7,
+      openAiTemp: 0.7,
+      openAiHistory: 20,
+      openAiPrompt: `You are a highly capable, expert AI assistant specialized in providing accurate, well-sourced, and pedagogically sound answers using the context of the workspace documents. When answering, follow these rules:\n\n- Use the workspace documents as the primary source of truth; never fabricate facts. If the answer is not supported by the workspace content, say you don't know and encourage the user to provide more context.\n- Provide concise direct answers first (1-3 sentences), then offer a short, clear explanation or step-by-step guidance with examples where helpful.\n- When applicable, include numbered steps, code snippets, or formulas in a human-readable format.\n- Cite the top N sources from the workspace (where available) and include brief citations (title or filename) inline.\n- If the query asks for content outside the workspace scope, politely refuse using the provided 'queryRefusalResponse' value and suggest ways the user can rephrase the question or add relevant documents.\n- Prefer plain language suitable for learners; use progressive disclosure for advanced technical details.\n- Avoid guessing; when uncertain, ask a clarifying question rather than hallucinate.\n\nSystem constraints: Answer length should be pragmatic; when multiple-step answers are given, use bullets or numbered steps and ensure clarity and correctness.`,
+      queryRefusalResponse: 'I\'m sorry - I can\'t answer that from the information available. Please provide more documents or ask a question related to the workspace content.',
+      chatMode: 'query',
+      topN: 4,
+    }
+
+    const finalConfig: WorkspaceConfig = {
+      ...defaultConfig,
+      ...config,
+      // Always enforce query mode for newly created workspaces unless explicitly overridden server-side
+      chatMode: 'query',
+    }
     
+    // Build top-level payload expected by AnythingLLM API
+    const payload: any = {
+      name,
+      similarityThreshold: finalConfig.similarityThreshold,
+      openAiTemp: finalConfig.openAiTemp,
+      openAiHistory: finalConfig.openAiHistory,
+      openAiPrompt: finalConfig.openAiPrompt,
+      queryRefusalResponse: finalConfig.queryRefusalResponse,
+      chatMode: finalConfig.chatMode,
+      topN: finalConfig.topN,
+    }
+    if (level) payload.level = level
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${ANYTHINGLLM_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ name, level }),
+      body: JSON.stringify(payload),
     })
 
     if (!response.ok) {
-      const errorText = await response.text()
+      const errorText = await response.text().catch(() => '')
       throw new Error(`Failed to create workspace: ${response.status} ${errorText}`)
     }
 
     const data = await response.json()
     return data.workspace
+    // Fallback: should not reach here, but throw in case none of the endpoints succeeded
+    throw new Error('Failed to create workspace: No endpoint succeeded')
   } catch (error) {
     console.error('Error creating workspace:', error)
     throw error

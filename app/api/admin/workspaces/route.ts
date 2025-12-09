@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createWorkspace, fetchWorkspaces } from '@/app/lib/anythingllm'
+import { createWorkspace, fetchWorkspaces, WorkspaceConfig } from '@/app/lib/anythingllm'
 import { isRequestAdmin } from '@/app/lib/admin-auth'
 
 export async function GET(request: Request) {
@@ -62,7 +62,18 @@ export async function POST(request: Request) {
     const slugSubject = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
     const finalName = `lumo_${slugSubject}_${normalizedLevel}`
 
-    const workspace = await createWorkspace(finalName, normalizedLevel)
+    // Provide a default workspace config for new workspaces; can be extended to accept config from request body later
+    const workspaceConfig: Partial<WorkspaceConfig> = {
+      similarityThreshold: 0.7,
+      openAiTemp: 0.7,
+      openAiHistory: 20,
+      openAiPrompt: `You are an AI assistant that must answer queries by using the workspace documents as the primary sources of truth. Provide concise, accurate answers with references to supporting documents. If unable to answer from workspace content, respond with a refusal message and suggest additional context or documents. Aim for clarity and step-by-step explanations when appropriate.`,
+      queryRefusalResponse: 'I’m sorry — I can’t answer that from the information available. Please provide more documents or a clearer question related to this subject.',
+      chatMode: 'query',
+      topN: 4,
+    }
+
+    const workspace = await createWorkspace(finalName, normalizedLevel, workspaceConfig)
     return NextResponse.json({ workspace })
   } catch (error: any) {
     return NextResponse.json(
