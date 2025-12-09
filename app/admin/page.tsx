@@ -504,7 +504,7 @@ export default function AdminPage() {
                 {workspaces.map((ws) => {
                   const parsed = parseWorkspaceName(ws.name)
                   const displayName = parsed ? parsed.name : ws.name
-                  const isAppWorkspace = ws.name.startsWith('alphachat_') || ws.name.startsWith('lumo_')
+                  const isAppWorkspace = ws.name.startsWith('lumo_')
                   
                   if (!isAppWorkspace) return null // Only show app workspaces
 
@@ -547,7 +547,7 @@ export default function AdminPage() {
                     </li>
                   )
                 })}
-                {workspaces.filter(ws => ws.name.startsWith('alphachat_') || ws.name.startsWith('lumo_')).length === 0 && (
+                {workspaces.filter(ws => ws.name.startsWith('lumo_')).length === 0 && (
                   <li className="px-6 py-4 text-sm text-zinc-500 text-center">
                     No subjects found.
                   </li>

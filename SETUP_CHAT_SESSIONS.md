@@ -69,8 +69,8 @@ Test the sessions API directly:
 1. Open browser console
 2. Run this JavaScript:
 ```javascript
-// Replace 'alphachat_physics' with your actual subject ID
-fetch('/api/sessions?subjectId=alphachat_physics')
+// Replace 'lumo_physics' with your actual subject ID
+fetch('/api/sessions?subjectId=lumo_physics')
   .then(r => r.json())
   .then(console.log)
   .catch(console.error);
