@@ -54,3 +54,28 @@ Notes on creating subjects from the Admin UI:
 - Subject names must be Title Case — each word starts with a capital letter (e.g., "Computer Science"). Submissions that are not Title Case will be rejected.
 - Only O Level or A Level are supported. Choose the level when creating the subject.
 - The internal workspace handle will be generated on the backend in the form: `lumo_{subject-with-hyphens}_{LEVEL}` — e.g., `lumo_computer-science_O`.
+
+## Confirm modals
+
+This project uses a shared `ConfirmModal` component for destructive actions like logging out, deleting chat sessions or deleting subjects. You can use it like this:
+
+```tsx
+import ConfirmModal from '@/app/components/ConfirmModal'
+
+<ConfirmModal
+	open={confirmOpen}
+	title="Delete"
+	description="Are you sure you want to delete this?"
+	confirmLabel="Delete"
+	danger
+	requireTypedConfirmation
+	requiredText={displayName}
+	onCancel={() => setConfirmOpen(false)}
+	onConfirm={async () => {
+		await performDelete()
+		setConfirmOpen(false)
+	}}
+/>
+```
+
+The modal supports: typed confirmation (use `requireTypedConfirmation` and `requiredText`), a danger style, loading state via the `onConfirm` and `loading` props, and customizable labels.

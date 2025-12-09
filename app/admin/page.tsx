@@ -15,6 +15,7 @@ import {
   File
 } from 'lucide-react'
 import LoadingButton from '@/app/components/LoadingButton'
+import ConfirmModal from '@/app/components/ConfirmModal'
 import { parseWorkspaceName } from '@/app/lib/subject-utils'
 
 interface Workspace {
@@ -60,9 +61,10 @@ export default function AdminPage() {
   // Delete confirmation modal states
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [workspaceToDelete, setWorkspaceToDelete] = useState<Workspace | null>(null)
-  const [confirmInput, setConfirmInput] = useState('')
+  // typed confirmation moved into ConfirmModal
   const [deleting, setDeleting] = useState(false)
   const [isAdminLoggingOut, setIsAdminLoggingOut] = useState(false)
+  const [adminLogoutConfirmOpen, setAdminLogoutConfirmOpen] = useState(false)
 
   useEffect(() => {
     const checkAdminAuth = async () => {
@@ -125,24 +127,17 @@ export default function AdminPage() {
   function openDeleteModal(e: React.MouseEvent, ws: Workspace) {
     e.stopPropagation()
     setWorkspaceToDelete(ws)
-    setConfirmInput('')
+    // Confirm modal will reset internally
     setDeleteModalOpen(true)
   }
 
   const handleModalCancel = () => {
     setDeleteModalOpen(false)
     setWorkspaceToDelete(null)
-    setConfirmInput('')
   }
 
   const performDeleteWorkspace = async () => {
     if (!workspaceToDelete) return
-    // Validate typed confirmation (case-sensitive exact match of display name)
-    const displayName = parseWorkspaceName(workspaceToDelete.name)?.name || workspaceToDelete.name
-    if (confirmInput.trim() !== displayName.trim()) {
-      setUploadStatus({ type: 'error', message: 'Confirmation text does not match subject name' })
-      return
-    }
 
     try {
       setDeleting(true)
@@ -421,7 +416,7 @@ export default function AdminPage() {
             Back to App
           </button>
             {isAdminAuthenticated && (
-              <LoadingButton loading={isAdminLoggingOut} onClick={handleAdminLogout} className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors">
+              <LoadingButton loading={isAdminLoggingOut} onClick={() => setAdminLogoutConfirmOpen(true)} className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors">
                 Logout
               </LoadingButton>
             )}
@@ -722,48 +717,32 @@ export default function AdminPage() {
         </div>
       </main>
 
-      {/* Delete confirmation modal */}
       {deleteModalOpen && workspaceToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="fixed inset-0 bg-black/50" onClick={handleModalCancel}></div>
-          <div className="relative bg-zinc-900 border border-zinc-800 rounded-lg shadow-lg p-6 max-w-lg w-full mx-4 z-10">
-            <h3 className="text-lg font-medium text-zinc-100">Confirm Delete</h3>
-            <p className="mt-2 text-sm text-zinc-300">This will permanently delete the subject and all associated documents, sessions and messages. This action cannot be undone.</p>
-            <div className="mt-4 bg-zinc-900/70 border border-zinc-800 rounded-md p-4">
-              <p className="text-sm text-zinc-200">Subject:</p>
-              <p className="text-sm font-medium text-zinc-100 mt-1">{parseWorkspaceName(workspaceToDelete.name)?.name || workspaceToDelete.name}</p>
-              <p className="text-xs text-zinc-400 mt-1">Workspace slug: <span className="font-mono text-indigo-400">{workspaceToDelete.slug}</span></p>
-            </div>
-
-            <div className="mt-4">
-              <label className="block text-sm text-zinc-300">Type the subject name to confirm:</label>
-              <input
-                type="text"
-                value={confirmInput}
-                onChange={(e) => setConfirmInput(e.target.value)}
-                className="mt-2 block w-full px-3 py-2 rounded-md border border-zinc-700 bg-zinc-900 text-zinc-100"
-                placeholder={parseWorkspaceName(workspaceToDelete.name)?.name || workspaceToDelete.name}
-              />
-            </div>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={handleModalCancel}
-                className="px-4 py-2 rounded-md border border-zinc-700 text-zinc-200 hover:bg-zinc-800"
-              >
-                Cancel
-              </button>
-              <LoadingButton
-                loading={deleting}
-                onClick={performDeleteWorkspace}
-                disabled={confirmInput.trim() !== (parseWorkspaceName(workspaceToDelete.name)?.name || workspaceToDelete.name)}
-                className="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
-              >
-                Delete Subject
-              </LoadingButton>
-            </div>
-          </div>
-        </div>
+        <ConfirmModal
+          open={deleteModalOpen}
+          title="Confirm Delete"
+          description={`This will permanently delete the subject and all associated documents, sessions and messages. This action cannot be undone.`}
+          requireTypedConfirmation
+          requiredText={parseWorkspaceName(workspaceToDelete.name)?.name || workspaceToDelete.name}
+          danger
+          loading={deleting}
+          confirmLabel="Delete Subject"
+          onCancel={handleModalCancel}
+          onConfirm={performDeleteWorkspace}
+        />
+      )}
+      {adminLogoutConfirmOpen && (
+        <ConfirmModal
+          open={adminLogoutConfirmOpen}
+          title="Log out"
+          description="Are you sure you want to log out of the admin dashboard?"
+          confirmLabel="Log out"
+          onCancel={() => setAdminLogoutConfirmOpen(false)}
+          onConfirm={async () => {
+            setAdminLogoutConfirmOpen(false)
+            await handleAdminLogout()
+          }}
+        />
       )}
     </div>
   )

@@ -1,5 +1,3 @@
-'use client'
-
 import { useEffect, useState, useRef, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/app/lib/supabase/client'
@@ -22,6 +20,7 @@ import { Send,
   ChevronDown,
 } from 'lucide-react'
 import LoadingButton from '@/app/components/LoadingButton'
+import ConfirmModal from '@/app/components/ConfirmModal'
 import { parseWorkspaceName, getSubjectIcon } from '@/app/lib/subject-utils'
 import LogoutButton from '@/app/components/LogoutButton'
 
@@ -69,6 +68,10 @@ export default function ChatPage() {
   const [sessionsLoading, setSessionsLoading] = useState(false)
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null)
   const [editingTitle, setEditingTitle] = useState('')
+  const [sessionDeleteModalOpen, setSessionDeleteModalOpen] = useState(false)
+  const [sessionToDelete, setSessionToDelete] = useState<string | null>(null)
+  const [messageDeleteModalOpen, setMessageDeleteModalOpen] = useState(false)
+  const [messageToDelete, setMessageToDelete] = useState<string | null>(null)
   const [subjectDropdownOpen, setSubjectDropdownOpen] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -80,7 +83,7 @@ export default function ChatPage() {
     if (found) return found
 
     // Parse from subject ID if not found in loaded subjects
-    const workspaceName = subject.startsWith('lumo_') ? subject : `lumo_${subject}`
+    const workspaceName = subject.startsWith('alphachat_') ? subject : `alphachat_${subject}`
     const parsed = parseWorkspaceName(workspaceName)
     if (parsed) {
       return {
@@ -92,10 +95,10 @@ export default function ChatPage() {
     }
 
     // Fallback
-    const baseSubject = subject.replace('lumo_', '').split('_')[0] || 'unknown'
+    const baseSubject = subject.replace('alphachat_', '').split('_')[0] || 'unknown'
     return {
       id: subject,
-      name: subject.replace('lumo_', '').replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()) || subject,
+      name: subject.replace('alphachat_', '').replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()) || subject,
       icon: getSubjectIcon(baseSubject, 'small'),
       baseSubject: baseSubject,
     }
@@ -110,9 +113,9 @@ export default function ChatPage() {
         const data = await response.json()
 
         if (response.ok && Array.isArray(data)) {
-          // Filter workspaces that start with 'lumo_'
+          // Filter workspaces that start with 'alphachat_'
           const alphachatWorkspaces = data.filter((ws: any) =>
-            ws.name && ws.name.startsWith('lumo_')
+            ws.name && ws.name.startsWith('alphachat_')
           )
 
           // Parse workspaces into subjects
@@ -147,12 +150,12 @@ export default function ChatPage() {
   // Fetch workspace for the current subject
   useEffect(() => {
     const fetchWorkspace = async () => {
-      // Use the subject ID directly (which should be the workspace name like 'lumo_physics')
+      // Use the subject ID directly (which should be the workspace name like 'alphachat_physics')
       // If subject is already in the loaded subjects, use that ID, otherwise construct it
       const foundSubject = subjects.find((s) => s.id === subject)
       const workspaceName = foundSubject 
         ? foundSubject.id 
-        : (subject.startsWith('lumo_') ? subject : `lumo_${subject}`)
+        : (subject.startsWith('alphachat_') ? subject : `alphachat_${subject}`)
       
       try {
         setWorkspaceError(null)
@@ -287,7 +290,7 @@ export default function ChatPage() {
     
     try {
       setSessionsLoading(true)
-      const subjectId = subject.startsWith('lumo_') ? subject : `lumo_${subject}`
+      const subjectId = subject.startsWith('alphachat_') ? subject : `alphachat_${subject}`
       const response = await fetch(`/api/sessions?subjectId=${encodeURIComponent(subjectId)}`)
       const data = await response.json()
 
@@ -316,7 +319,7 @@ export default function ChatPage() {
   // Create a new chat session (only when user clicks "New chat" button)
   const createNewSession = async () => {
     try {
-      const subjectId = subject.startsWith('lumo_') ? subject : `lumo_${subject}`
+      const subjectId = subject.startsWith('alphachat_') ? subject : `alphachat_${subject}`
       const response = await fetch('/api/sessions', {
         method: 'POST',
         headers: {
@@ -447,30 +450,34 @@ export default function ChatPage() {
     ])
   }
 
-  // Delete a chat session
-  const deleteSession = async (sessionId: string, e: React.MouseEvent) => {
+  // Delete a chat session (display modal first)
+  const openDeleteSessionModal = (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    
-    if (!confirm('Are you sure you want to delete this chat?')) {
-      return
-    }
+    setSessionToDelete(sessionId)
+    setSessionDeleteModalOpen(true)
+  }
 
+  const performDeleteSession = async () => {
+    if (!sessionToDelete) return
     try {
-      const response = await fetch(`/api/sessions/${sessionId}`, {
+      const response = await fetch(`/api/sessions/${sessionToDelete}`, {
         method: 'DELETE',
       })
 
       if (response.ok) {
         // Remove from list
-        setChatSessions((prev) => prev.filter((s) => s.id !== sessionId))
+        setChatSessions((prev) => prev.filter((s) => s.id !== sessionToDelete))
         
         // If deleted session was current, clear it and show welcome
-        if (currentSessionId === sessionId) {
+        if (currentSessionId === sessionToDelete) {
           clearSession()
         }
       }
     } catch (error) {
       console.error('Error deleting chat session:', error)
+    } finally {
+      setSessionToDelete(null)
+      setSessionDeleteModalOpen(false)
     }
   }
 
@@ -518,7 +525,7 @@ export default function ChatPage() {
     let sessionIdToUse = currentSessionId
     if (!sessionIdToUse) {
       // Create a new session only when user sends first message
-      const subjectId = subject.startsWith('lumo_') ? subject : `lumo_${subject}`
+      const subjectId = subject.startsWith('alphachat_') ? subject : `alphachat_${subject}`
       try {
         const createResponse = await fetch('/api/sessions', {
           method: 'POST',
@@ -648,11 +655,20 @@ export default function ChatPage() {
     }
   }
 
-  const handleLogout = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/auth/login')
-    router.refresh()
+  // Logout is handled by the shared `LogoutButton` which shows a confirmation modal
+
+  const openDeleteMessageModal = (messageId: string) => {
+    setMessageToDelete(messageId)
+    setMessageDeleteModalOpen(true)
+  }
+
+  const performDeleteMessage = async () => {
+    if (!messageToDelete) return
+
+    // Call actual deletion method
+    await handleDeleteMessage(messageToDelete)
+    setMessageToDelete(null)
+    setMessageDeleteModalOpen(false)
   }
 
   const handleDeleteMessage = async (messageId: string) => {
@@ -861,7 +877,7 @@ export default function ChatPage() {
                                 <Edit3 className="h-3.5 w-3.5" />
                               </button>
                               <button
-                                onClick={(e) => deleteSession(session.id, e)}
+                                onClick={(e) => openDeleteSessionModal(session.id, e)}
                                 className="rounded p-1 text-zinc-400 hover:bg-zinc-700 hover:text-red-400"
                                 title="Delete"
                               >
@@ -913,13 +929,7 @@ export default function ChatPage() {
             >
               <Home className="h-4 w-4" />
             </Link>
-            <button
-              onClick={handleLogout}
-              className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
-              title="Logout"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
+            <LogoutButton iconOnly title="Logout" />
           </div>
         </div>
 
@@ -989,7 +999,7 @@ export default function ChatPage() {
                       </p>
                       {message.id !== 'welcome' && (
                         <button
-                          onClick={() => handleDeleteMessage(message.id)}
+                          onClick={() => openDeleteMessageModal(message.id)}
                           className="opacity-0 transition-opacity group-hover:opacity-100 hover:opacity-100"
                           title="Delete message"
                         >
@@ -1062,6 +1072,26 @@ export default function ChatPage() {
           </div>
         </div>
       </div>
+      {/* Confirmation modals */}
+      <ConfirmModal
+        open={sessionDeleteModalOpen}
+        title="Delete Chat"
+        description="Are you sure you want to delete this chat? This action cannot be undone."
+        confirmLabel="Delete"
+        danger
+        onCancel={() => setSessionDeleteModalOpen(false)}
+        onConfirm={performDeleteSession}
+      />
+
+      <ConfirmModal
+        open={messageDeleteModalOpen}
+        title="Delete Message"
+        description="Are you sure you want to delete this message?"
+        confirmLabel="Delete"
+        danger
+        onCancel={() => setMessageDeleteModalOpen(false)}
+        onConfirm={performDeleteMessage}
+      />
     </div>
   )
 }
