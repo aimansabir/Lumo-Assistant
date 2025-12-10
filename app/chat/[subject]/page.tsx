@@ -85,7 +85,7 @@ export default function ChatPage() {
     if (found) return found
 
     // Parse from subject ID if not found in loaded subjects
-    const workspaceName = subject.startsWith('alphachat_') ? subject : `alphachat_${subject}`
+    const workspaceName = subject.startsWith('lumo_') ? subject : `lumo_${subject}`
     const parsed = parseWorkspaceName(workspaceName)
     if (parsed) {
       return {
@@ -97,10 +97,10 @@ export default function ChatPage() {
     }
 
     // Fallback
-    const baseSubject = subject.replace('alphachat_', '').split('_')[0] || 'unknown'
+    const baseSubject = subject.replace('lumo_', '').split('_')[0] || 'unknown'
     return {
       id: subject,
-      name: subject.replace('alphachat_', '').replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()) || subject,
+      name: subject.replace('lumo_', '').replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()) || subject,
       icon: getSubjectIcon(baseSubject, 'small'),
       baseSubject: baseSubject,
     }
@@ -115,13 +115,13 @@ export default function ChatPage() {
         const data = await response.json()
 
         if (response.ok && Array.isArray(data)) {
-          // Filter workspaces that start with 'alphachat_'
-          const alphachatWorkspaces = data.filter((ws: any) =>
-            ws.name && ws.name.startsWith('alphachat_')
+          // Filter workspaces that start with 'lumo_'
+          const appWorkspaces = data.filter((ws: any) =>
+            ws.name && ws.name.startsWith('lumo_')
           )
 
           // Parse workspaces into subjects
-          const parsedSubjects: Subject[] = alphachatWorkspaces
+          const parsedSubjects: Subject[] = appWorkspaces
             .map((ws: any) => {
               const parsed = parseWorkspaceName(ws.name)
               if (!parsed) return null
@@ -152,12 +152,12 @@ export default function ChatPage() {
   // Fetch workspace for the current subject
   useEffect(() => {
     const fetchWorkspace = async () => {
-      // Use the subject ID directly (which should be the workspace name like 'alphachat_physics')
+      // Use the subject ID directly (which should be the workspace name like 'lumo_physics')
       // If subject is already in the loaded subjects, use that ID, otherwise construct it
       const foundSubject = subjects.find((s) => s.id === subject)
       const workspaceName = foundSubject 
         ? foundSubject.id 
-        : (subject.startsWith('alphachat_') ? subject : `alphachat_${subject}`)
+        : (subject.startsWith('lumo_') ? subject : `lumo_${subject}`)
       
       try {
         setWorkspaceError(null)
@@ -292,7 +292,7 @@ export default function ChatPage() {
     
     try {
       setSessionsLoading(true)
-      const subjectId = subject.startsWith('alphachat_') ? subject : `alphachat_${subject}`
+      const subjectId = subject.startsWith('lumo_') ? subject : `lumo_${subject}`
       const response = await fetch(`/api/sessions?subjectId=${encodeURIComponent(subjectId)}`)
       const data = await response.json()
 
@@ -321,7 +321,7 @@ export default function ChatPage() {
   // Create a new chat session (only when user clicks "New chat" button)
   const createNewSession = async () => {
     try {
-      const subjectId = subject.startsWith('alphachat_') ? subject : `alphachat_${subject}`
+      const subjectId = subject.startsWith('lumo_') ? subject : `lumo_${subject}`
       const response = await fetch('/api/sessions', {
         method: 'POST',
         headers: {
@@ -527,7 +527,7 @@ export default function ChatPage() {
     let sessionIdToUse = currentSessionId
     if (!sessionIdToUse) {
       // Create a new session only when user sends first message
-      const subjectId = subject.startsWith('alphachat_') ? subject : `alphachat_${subject}`
+      const subjectId = subject.startsWith('lumo_') ? subject : `lumo_${subject}`
       try {
         const createResponse = await fetch('/api/sessions', {
           method: 'POST',
