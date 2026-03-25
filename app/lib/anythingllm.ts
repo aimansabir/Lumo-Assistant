@@ -323,6 +323,41 @@ export async function uploadDocument(formData: FormData): Promise<{ success: boo
 }
 
 /**
+ * Delete a document from AnythingLLM system entirely
+ */
+export async function deleteSystemDocument(docName: string): Promise<boolean> {
+  if (!ANYTHINGLLM_API_KEY) {
+    throw new Error('ANYTHINGLLM_API_KEY is not configured')
+  }
+
+  try {
+    const url = `${ANYTHINGLLM_BASE_URL}/system/remove-documents`
+    
+    // The explicit endpoint used by AnythingLLM to delete storage documents
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${ANYTHINGLLM_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ names: [docName] }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      // If endpoint doesn't exist, we might be on a different version, but we should not crash the whole flow.
+      console.error(`Failed to delete document from system: ${response.status} ${errorText}`)
+      return false
+    }
+
+    return true
+  } catch (error) {
+    console.error('Error deleting document from system:', error)
+    return false // Return false to not block the UI if the system delete fails (workspace embed still removed)
+  }
+}
+
+/**
  * Update workspace embeddings (add/remove documents)
  */
 export async function updateWorkspaceEmbeddings(

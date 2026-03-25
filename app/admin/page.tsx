@@ -31,6 +31,7 @@ interface Document {
   filename: string
   createdAt: string
   metadata: string
+  docpath?: string
 }
 
 export default function AdminPage() {
@@ -65,6 +66,11 @@ export default function AdminPage() {
   const [deleting, setDeleting] = useState(false)
   const [isAdminLoggingOut, setIsAdminLoggingOut] = useState(false)
   const [adminLogoutConfirmOpen, setAdminLogoutConfirmOpen] = useState(false)
+  
+  // Document delete modal states
+  const [deleteDocModalOpen, setDeleteDocModalOpen] = useState(false)
+  const [docToDelete, setDocToDelete] = useState<Document | null>(null)
+  const [deletingDoc, setDeletingDoc] = useState(false)
 
   useEffect(() => {
     const checkAdminAuth = async () => {
@@ -134,6 +140,45 @@ export default function AdminPage() {
   const handleModalCancel = () => {
     setDeleteModalOpen(false)
     setWorkspaceToDelete(null)
+  }
+
+  function openDeleteDocModal(e: React.MouseEvent, doc: Document) {
+    e.stopPropagation()
+    setDocToDelete(doc)
+    setDeleteDocModalOpen(true)
+  }
+
+  const handleDocModalCancel = () => {
+    setDeleteDocModalOpen(false)
+    setDocToDelete(null)
+  }
+
+  const performDeleteDocument = async () => {
+    if (!docToDelete || !selectedWorkspace) return
+
+    try {
+      setDeletingDoc(true)
+      const location = docToDelete.docpath || docToDelete.filename
+      const res = await fetch(`/api/admin/workspaces/${selectedWorkspace.slug}/documents/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ docLocation: location })
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Failed to delete document')
+      }
+
+      setUploadStatus({ type: 'success', message: 'Document deleted successfully' })
+      await fetchDocuments(selectedWorkspace.slug)
+    } catch (err: any) {
+      console.error(err)
+      setUploadStatus({ type: 'error', message: err.message || 'Failed to delete document' })
+    } finally {
+      setDeletingDoc(false)
+      handleDocModalCancel()
+    }
   }
 
   const performDeleteWorkspace = async () => {
@@ -677,6 +722,13 @@ export default function AdminPage() {
                                   </p>
                                 </div>
                               </div>
+                              <button
+                                onClick={(e) => openDeleteDocModal(e, doc)}
+                                title="Delete document"
+                                className="text-red-400 hover:text-red-200 transition-colors p-2 shrink-0 ml-4 rounded-md hover:bg-zinc-800"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
                             </li>
                           )})}
                         </ul>
@@ -729,6 +781,18 @@ export default function AdminPage() {
           confirmLabel="Delete Subject"
           onCancel={handleModalCancel}
           onConfirm={performDeleteWorkspace}
+        />
+      )}
+      {deleteDocModalOpen && docToDelete && (
+        <ConfirmModal
+          open={deleteDocModalOpen}
+          title="Delete Document"
+          description={`Are you sure you want to delete "${docToDelete.filename}"? This will permanently remove it from the workspace and delete the file.`}
+          danger
+          loading={deletingDoc}
+          confirmLabel="Delete"
+          onCancel={handleDocModalCancel}
+          onConfirm={performDeleteDocument}
         />
       )}
       {adminLogoutConfirmOpen && (
