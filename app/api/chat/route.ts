@@ -88,16 +88,20 @@ export async function POST(request: Request) {
       console.warn('⚠️ [API] Could not fetch workspace details for slug:', err)
     }
 
-    // Try multiple endpoint formats - AnythingLLM versions vary
-    const endpointFormats: string[] = [
-      `/workspaces/${workspaceId}/chat`,  // Standard format with ID
-    ]
+    // Try multiple endpoint formats
+    const endpointFormats: string[] = []
     
-    // Add slug-based formats if we have the slug
+    // 1. If we have both slug and threadId, prioritize the v1 API for threads
+    if (workspaceSlug && threadId) {
+      endpointFormats.push(`/v1/workspace/${workspaceSlug}/thread/${threadId}/chat`)
+    }
+    
+    // 2. Legacy fallback formats
+    endpointFormats.push(`/workspaces/${workspaceId}/chat`) // Standard format with ID
     if (workspaceSlug) {
       endpointFormats.push(
         `/workspace/${workspaceSlug}/chat`,  // Singular with slug
-        `/workspaces/${workspaceSlug}/chat`,  // Plural with slug
+        `/workspaces/${workspaceSlug}/chat`   // Plural with slug
       )
     }
 
@@ -201,6 +205,7 @@ export async function POST(request: Request) {
     // Check content type
     const contentType = res.headers.get('content-type') || ''
     console.log('📥 [API] Response content-type:', contentType)
+    console.log('📥 [API] Raw response snippet:', rawResponseText.substring(0, 1000))
     
     // Try to parse as JSON (rawResponseText was already read above)
     let data: any

@@ -129,49 +129,43 @@ export async function POST(request: NextRequest) {
           if (workspace) {
             workspaceId = workspace.id
             
-            // Create a new thread in AnythingLLM
-            // AnythingLLM creates threads automatically, but we can initialize with an empty message
-            // or use the thread creation endpoint if available
+            // Create a new thread in AnythingLLM v1 API
             try {
-              // Try to create a thread by sending an initial empty/system message
-              // Some AnythingLLM versions use /workspaces/{id}/threads endpoint
-              const threadEndpoints = [
-                `${BASE_URL}/workspaces/${workspaceId}/threads`,
-                `${BASE_URL}/workspace/${workspace.slug}/threads`,
-              ]
+              const newThreadUrl = `${BASE_URL}/v1/workspace/${workspace.slug}/thread/new`
+              
+              const threadRes = await fetch(newThreadUrl, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${API_KEY}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  name: title || 'New Chat',
+                }),
+              })
 
-              for (const endpoint of threadEndpoints) {
-                try {
-                  const threadRes = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: {
-                      'Authorization': `Bearer ${API_KEY}`,
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                      title: title || 'New Chat',
-                    }),
-                  })
+              const rawThreadText = await threadRes.text()
 
-                  // Check if response is HTML (endpoint doesn't exist)
-                  const contentType = threadRes.headers.get('content-type') || ''
-                  const responseText = await threadRes.text()
-                  
-                  if (threadRes.ok && contentType.includes('application/json')) {
-                    try {
-                      const threadData = JSON.parse(responseText)
-                      threadId = threadData.id || threadData.threadId || threadData.thread_id
-                      break
-                    } catch (parseError) {
-                      // Failed to parse, continue to next endpoint
+              if (threadRes.ok) {
+                // Check if the response looks like HTML (404/500 pages)
+                if (rawThreadText.trim().startsWith('<!DOCTYPE') || rawThreadText.trim().startsWith('<html')) {
+                  console.warn('⚠️ Thread creation returned HTML. Endpoint might be wrong or unsupported.')
+                } else {
+                  try {
+                    const threadData = JSON.parse(rawThreadText)
+                    // v1 API returns: { thread: { id, slug, ... }, message: null }
+                    if (threadData.thread && threadData.thread.slug) {
+                      threadId = threadData.thread.slug // We store the slug to use in the URL later
                     }
+                  } catch (e) {
+                    console.warn('⚠️ Failed to parse thread creation response as JSON:', e)
                   }
-                } catch (err) {
-                  continue
                 }
+              } else {
+                console.warn('⚠️ Could not create v1 thread, status:', threadRes.status, 'Response:', rawThreadText.substring(0, 100))
               }
             } catch (threadError) {
-              console.warn('⚠️ Could not create thread, will be created on first message:', threadError)
+              console.warn('⚠️ Could not create thread:', threadError)
             }
           } else {
             console.warn('⚠️ Workspace not found for subjectId:', subjectId)
