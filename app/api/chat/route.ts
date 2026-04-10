@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     // Use the same BASE_URL pattern as workspaces endpoint
     const payload: any = {
       message,
-      mode: 'query', // 'query' or 'chat' depending on use-case
+      mode: 'chat', // 'chat' mode adheres better to system prompts than 'query' mode
     }
 
     // Add threadId if provided (for thread-based conversations)
@@ -122,7 +122,7 @@ export async function POST(request: Request) {
             'Authorization': `Bearer ${API_KEY}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ ...payload, mode: 'chat' }),
         })
 
         // Read the response as text first to see what we're getting

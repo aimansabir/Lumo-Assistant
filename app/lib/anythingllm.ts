@@ -31,6 +31,29 @@ export interface WorkspaceConfig {
   topN?: number
 }
 
+/**
+ * Default system prompt template for new subjects
+ */
+export const DEFAULT_SYSTEM_PROMPT_TEMPLATE = `You are a highly capable, expert AI tutor and assistant specialized in {{subject}}. Your goal is to provide accurate, well-sourced, and pedagogically sound answers using the context of the workspace documents.
+
+When answering, follow these strict rules:
+1. **Source of Truth**: Use the provided workspace documents as your primary source. Never fabricate facts. If the answer is not supported by the content, say you don't know and encourage the user to provide more context.
+2. **Subject Focus**: Your expertise is specifically in {{subject}}. Ensure your tone and terminology are appropriate for this field.
+3. **Structure**: Provide a concise direct answer first (1-3 sentences), followed by a clear explanation or step-by-step guidance with examples where helpful.
+4. **Formatting**: Use Markdown for clarity. Use bolding for key terms, lists for steps, and code blocks for formulas or snippets.
+5. **Citations**: Cite the top sources from the workspace inline (e.g., [Source Title]).
+6. **Refusal**: If a query is entirely unrelated to {{subject}} or the workspace documents, politely refuse and suggest how the user can rephrase for better results.
+7. **Clarity**: Prefer plain language suitable for learners; use progressive disclosure for advanced technical details. Avoid guessing.
+
+System constraints: Be pragmatic. If multiple steps are required, use numbered lists. Ensure clarity, correctness, and a supportive educational tone.`;
+
+/**
+ * Generates a comprehensive system prompt for a subject
+ */
+export function getSystemPrompt(subjectName: string): string {
+  return DEFAULT_SYSTEM_PROMPT_TEMPLATE.replace(/{{subject}}/g, subjectName);
+}
+
 export interface Document {
   id: number
   docId: string
@@ -69,7 +92,7 @@ export async function fetchWorkspaces(): Promise<Workspace[]> {
 
   try {
     const url = `${ANYTHINGLLM_BASE_URL}/workspaces`
-    
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -84,14 +107,14 @@ export async function fetchWorkspaces(): Promise<Workspace[]> {
     if (!response.ok) {
       const errorText = await response.text()
       console.error('❌ [AnythingLLM] Error response:', errorText.substring(0, 500))
-      
+
       // If it's HTML, provide a better error message
       if (errorText.trim().startsWith('<!DOCTYPE') || errorText.trim().startsWith('<html')) {
         throw new Error(
           `AnythingLLM server returned HTML instead of JSON. Check if the base URL is correct: ${ANYTHINGLLM_BASE_URL}`
         )
       }
-      
+
       throw new Error(
         `Failed to fetch workspaces: ${response.status} ${errorText.substring(0, 200)}`
       )
@@ -107,7 +130,7 @@ export async function fetchWorkspaces(): Promise<Workspace[]> {
     }
 
     const data = await response.json()
-    
+
     // Handle different response formats
     let workspaces: Workspace[] = []
     if (Array.isArray(data)) {
@@ -117,7 +140,7 @@ export async function fetchWorkspaces(): Promise<Workspace[]> {
     } else if (data.data && Array.isArray(data.data)) {
       workspaces = data.data
     }
-    
+
     return workspaces
   } catch (error) {
     console.error('❌ [AnythingLLM] Error fetching workspaces:', error)
@@ -136,11 +159,11 @@ export async function findWorkspaceByName(
   name: string
 ): Promise<Workspace | null> {
   const workspaces = await fetchWorkspaces()
-  
+
   const found = workspaces.find(
     (ws) => ws.name.toLowerCase() === name.toLowerCase()
   )
-  
+
   return found || null
 }
 
@@ -158,7 +181,7 @@ export async function sendChatMessage(
 
   try {
     const url = `${ANYTHINGLLM_BASE_URL}/workspaces/${workspaceId}/chat`
-    
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -178,14 +201,14 @@ export async function sendChatMessage(
     if (!response.ok) {
       const errorText = await response.text()
       console.error('❌ [AnythingLLM] Chat error response:', errorText.substring(0, 500))
-      
+
       // If it's HTML, provide a better error message
       if (errorText.trim().startsWith('<!DOCTYPE') || errorText.trim().startsWith('<html')) {
         throw new Error(
           `AnythingLLM server returned HTML instead of JSON. Check if the workspace ID and endpoint are correct.`
         )
       }
-      
+
       throw new Error(
         `Failed to send chat message: ${response.status} ${errorText.substring(0, 200)}`
       )
@@ -200,7 +223,7 @@ export async function sendChatMessage(
     }
 
     const data = await response.json()
-    
+
     return {
       response: data.response || data.text || data.message || '',
       sources: data.sources || [],
@@ -240,7 +263,7 @@ export async function createWorkspace(name: string, level?: string, config?: Par
       similarityThreshold: 0.7,
       openAiTemp: 0.7,
       openAiHistory: 20,
-      openAiPrompt: `You are a highly capable, expert AI assistant specialized in providing accurate, well-sourced, and pedagogically sound answers using the context of the workspace documents. When answering, follow these rules:\n\n- Use the workspace documents as the primary source of truth; never fabricate facts. If the answer is not supported by the workspace content, say you don't know and encourage the user to provide more context.\n- Provide concise direct answers first (1-3 sentences), then offer a short, clear explanation or step-by-step guidance with examples where helpful.\n- When applicable, include numbered steps, code snippets, or formulas in a human-readable format.\n- Cite the top N sources from the workspace (where available) and include brief citations (title or filename) inline.\n- If the query asks for content outside the workspace scope, politely refuse using the provided 'queryRefusalResponse' value and suggest ways the user can rephrase the question or add relevant documents.\n- Prefer plain language suitable for learners; use progressive disclosure for advanced technical details.\n- Avoid guessing; when uncertain, ask a clarifying question rather than hallucinate.\n\nSystem constraints: Answer length should be pragmatic; when multiple-step answers are given, use bullets or numbered steps and ensure clarity and correctness.`,
+      openAiPrompt: getSystemPrompt(name.replace(/^lumo_/, '').replace(/_[OA]$/, '').replace(/-/g, ' ')),
       queryRefusalResponse: 'I\'m sorry - I can\'t answer that from the information available. Please provide more documents or ask a question related to the workspace content.',
       chatMode: 'query',
       topN: 4,
@@ -249,10 +272,10 @@ export async function createWorkspace(name: string, level?: string, config?: Par
     const finalConfig: WorkspaceConfig = {
       ...defaultConfig,
       ...config,
-      // Always enforce query mode for newly created workspaces unless explicitly overridden server-side
-      chatMode: 'query',
+      // Default to 'chat' mode for better system prompt adherence
+      chatMode: config?.chatMode || 'chat',
     }
-    
+
     // Build top-level payload expected by AnythingLLM API
     const payload: any = {
       name,
@@ -281,12 +304,63 @@ export async function createWorkspace(name: string, level?: string, config?: Par
     }
 
     const data = await response.json()
-    return data.workspace
+    const workspace = data.workspace
+    
+    // Explicitly update the workspace after creation to ensure "extended" fields like openAiPrompt are saved
+    try {
+      console.log(`[AnythingLLM] Creation successful, force-updating settings for ${workspace.slug}...`)
+      await updateWorkspace(workspace.slug, finalConfig)
+    } catch (updateError) {
+      console.warn(`[AnythingLLM] Warning: Failed to apply extended settings after creation:`, updateError)
+      // We don't throw here to avoid failing the whole creation if only the update fails
+    }
+
+    return workspace
     // Fallback: should not reach here, but throw in case none of the endpoints succeeded
     throw new Error('Failed to create workspace: No endpoint succeeded')
   } catch (error) {
     console.error('Error creating workspace:', error)
     throw error
+  }
+}
+
+/**
+ * Update workspace settings
+ * This is used to force-apply settings like system prompts that might be ignored during creation.
+ */
+export async function updateWorkspace(slug: string, config: Partial<WorkspaceConfig>): Promise<boolean> {
+  if (!ANYTHINGLLM_API_KEY) {
+    throw new Error('ANYTHINGLLM_API_KEY is not configured')
+  }
+
+  try {
+    const url = `${ANYTHINGLLM_BASE_URL}/workspace/${slug}/update`
+    
+    // Send both openAiPrompt and systemPrompt names to cover different API versions
+    const payload = {
+      ...config,
+      systemPrompt: config.openAiPrompt, // Fallback key
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${ANYTHINGLLM_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '')
+      console.error(`❌ [AnythingLLM] Update failed: ${response.status}`, errorText)
+      return false
+    }
+
+    return true
+  } catch (error) {
+    console.error('Error updating workspace:', error)
+    return false
   }
 }
 
@@ -300,7 +374,7 @@ export async function uploadDocument(formData: FormData): Promise<{ success: boo
 
   try {
     const url = `${ANYTHINGLLM_BASE_URL}/document/upload`
-    
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -332,7 +406,7 @@ export async function deleteSystemDocument(docName: string): Promise<boolean> {
 
   try {
     const url = `${ANYTHINGLLM_BASE_URL}/system/remove-documents`
-    
+
     // The explicit endpoint used by AnythingLLM to delete storage documents
     const response = await fetch(url, {
       method: 'DELETE',
@@ -361,8 +435,8 @@ export async function deleteSystemDocument(docName: string): Promise<boolean> {
  * Update workspace embeddings (add/remove documents)
  */
 export async function updateWorkspaceEmbeddings(
-  slug: string, 
-  adds: string[] = [], 
+  slug: string,
+  adds: string[] = [],
   deletes: string[] = []
 ): Promise<boolean> {
   if (!ANYTHINGLLM_API_KEY) {
@@ -371,7 +445,7 @@ export async function updateWorkspaceEmbeddings(
 
   try {
     const url = `${ANYTHINGLLM_BASE_URL}/workspace/${slug}/update-embeddings`
-    
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -454,7 +528,7 @@ export async function getWorkspaceDocuments(slug: string): Promise<Document[]> {
 
   try {
     const url = `${ANYTHINGLLM_BASE_URL}/workspace/${slug}`
-    
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -473,7 +547,7 @@ export async function getWorkspaceDocuments(slug: string): Promise<Document[]> {
     if (data.workspace && Array.isArray(data.workspace) && data.workspace.length > 0) {
       return data.workspace[0].documents || []
     }
-    
+
     return []
   } catch (error) {
     console.error('Error fetching workspace documents:', error)
