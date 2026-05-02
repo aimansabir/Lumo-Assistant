@@ -4,6 +4,8 @@ import { useEffect, useState, useRef, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/app/lib/supabase/client'
 import Link from 'next/link'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { Send,
   Bot,
   User,
@@ -983,9 +985,9 @@ export default function ChatPage() {
                         : 'bg-zinc-800/80 backdrop-blur-sm text-zinc-100'
                     }`}
                   >
-                    <p className="whitespace-pre-wrap wrap-break-word text-sm leading-relaxed">
-                      {message.content}
-                    </p>
+                    <div className="text-sm leading-relaxed">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+                    </div>
                     <div className="mt-1 flex items-center justify-between gap-2">
                       <p
                         className={`text-xs ${
